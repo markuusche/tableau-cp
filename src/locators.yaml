@@ -1,0 +1,28 @@
+login:
+  email:                                       "input#email"
+  pass:                                        "input#password"
+  btn:                                         "button #not-busy"
+  cookies:                                     "button#onetrust-accept-btn-handler"
+  sign-in:                                     "button#signInButton"
+
+otp:
+  field:                                       "#input-9"
+  box:                                         ".slds-box"
+  btn:                                         "button[type='submit']"
+
+dashboard:
+  pop-up:                                      "div[data-tb-test-id=postlogin-test-id-Dialog-Floater-Root]"
+
+table:
+  main:                                        ".tab-clip > div:nth-child(6)"
+  download-btn:                                "#viz-viewer-toolbar > div:last-child #download"
+  iframe:                                      "iframe[title]"
+  category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
+  dropdown:                                    "div.tileContainer"
+  download:                                    "div[aria-labelledby='download']"
+  crosstab:                                    "div[aria-labelledby='download'] > div:nth-child(3)"
+  pop-up:                                      "div[aria-label='Download Crosstab']"
+  csv:                                         "div[aria-label='Download Crosstab'] .horizontal > label:last-child"
+  btn:                                         "div[aria-label='Download Crosstab'] .low-density"
+  data:                                        "div.tab-clip > div:nth-child(6)"
+
