@@ -1,4 +1,4 @@
-import os
+import os, ast
 import re
 import csv
 from time import sleep
@@ -63,10 +63,6 @@ class Tableau(Helper):
         
         driver.get(self.env('statistics'))
         self.navigate(driver)
-        
-        file_names = self.env('file_names')
-
-        self.modifyFiles(file_names)
 
     def modifyFiles(self, fileNames={}):
 
@@ -82,6 +78,10 @@ class Tableau(Helper):
                 print(f"\nFile not found: {old_name}")
 
     def getData(self):
+
+        file_names = self.env('file_names')
+        names = ast.literal_eval(file_names) if file_names else {}
+        self.modifyFiles(names)
         
         def clean_first_column(value):
             value = value.replace("IP_", "").replace("IP", "").strip()
@@ -186,10 +186,7 @@ class Tableau(Helper):
 
             filter_name = name.replace('.csv','').strip()
 
-            start_cell = 'B2' if name == stats else 'A2'
-
-            row = self.sheet.get_first_empty_row(filter_name, start_cell)
-            self.sheet.populateSheet(filter_name, f'A{row}', temp)
+            self.sheet.populateSheet(filter_name, f'A2', temp)
 
         # delete downloaded file
         for filename in self.files:

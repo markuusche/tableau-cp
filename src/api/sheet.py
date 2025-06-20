@@ -26,15 +26,51 @@ class GoogleSheet:
         creds = Credentials.from_service_account_file(helper.env('cds'))
         service = build('sheets', 'v4' , credentials=creds)
         range_name = f'{sheetName}!{cell}'
-        jackpotBody = {
+        
+        sheet_metadata = service.spreadsheets().get(spreadsheetId=helper.env('sheetId')).execute()
+        sheets = sheet_metadata.get('sheets', '')
+
+        # get sheet Id
+        sheetsIds = {
+            sheet['properties']['title']: sheet['properties']['sheetId']
+            for sheet in sheets
+        }
+
+        # add row above the data
+        add_row = len(values)
+        requests = [
+            {
+                "insertDimension": {
+                    "range": {
+                        "sheetId": sheetsIds[sheetName],
+                        "dimension": "ROWS",
+                        "startIndex": 1, 
+                        "endIndex": add_row + 1
+                    },
+                    "inheritFromBefore": False
+                }
+            }
+        ]
+
+        body = {
+            'requests': requests
+        }
+   
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=helper.env('sheetId'),
+            body=body
+        ).execute()
+
+
+        body = {
             "values": values
         }
-        
+
         service.spreadsheets().values().update(
             spreadsheetId=helper.env('sheetId'),
             range=range_name,
             valueInputOption='RAW',
-            body=jackpotBody
+            body=body
         ).execute()
  
     def get_first_empty_row(self, sheet_name, start_range='A3'):
