@@ -4,6 +4,9 @@ import os, ast
 import shutil
 import getpass
 import re
+from time import sleep
+from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -59,17 +62,24 @@ class Helper:
         downloads = os.path.expanduser("~/Downloads")
         weekly_folder = f"/Users/{user}/Downloads/weekly"
         daily_folder = f"/Users/{user}/Downloads/daily"
+        stats_folder = os.path.join(downloads, "stats")
 
         os.makedirs(weekly_folder, exist_ok=True)
         os.makedirs(daily_folder, exist_ok=True)
+        os.makedirs(stats_folder, exist_ok=True)
 
         files = self.renameFiles('file_names')
         file_renames = files
 
         for original_name in file_renames.keys():
             source_path = os.path.join(downloads, original_name)
+            daily_target_path = os.path.join(daily_folder, original_name)
 
             if os.path.exists(source_path):
+                
+                if self.env("st") in original_name and os.path.exists(daily_target_path):
+                    continue
+
                 if self.env("dg1") in original_name:
                     target_folder = weekly_folder
                 elif self.env("dg") in original_name or self.env("st") in original_name:
@@ -79,9 +89,15 @@ class Helper:
 
                 destination = get_unique_path(target_folder, original_name)
                 shutil.move(source_path, destination)
-                print(f"Moved: {original_name} → {destination}")
             else:
                 print(f"File not found: {original_name}")
+        
+        # move stats file separately to a folder
+        for filename in os.listdir(downloads):
+            filepath = os.path.join(downloads, filename)
+            if os.path.isfile(filepath) and filename.startswith(self.env("st")):
+                destination = os.path.join(stats_folder, filename)
+                shutil.move(filepath, destination)
 
     # rename the files 
     def modifyFiles(self, fileNames={}):
@@ -166,6 +182,36 @@ class Helper:
                 print(f"Deleted folder: {folder}")
             else:
                 print(f"Folder does not exist: {folder}")
+
+    # get weeks/day info
+    def getWeekInfo(self):
+        today = datetime.now(ZoneInfo("Asia/Manila"))
+        date_str = today.strftime("%Y-%m-%d")
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        weekday_index = date_obj.weekday()
+
+        monday = today - timedelta(days=7)
+        sunday = today - timedelta(days=1)
+
+        full_week = [(monday + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+
+        return {
+            "today": date_str,
+            "weekday_index": weekday_index,
+            "monday": monday.strftime("%Y-%m-%d"),
+            "sunday": sunday.strftime("%Y-%m-%d"),
+            "full_week": full_week
+        }
+    
+    # download data page
+    def download(self, driver):
+        driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
+        self.wait_element(driver, 'table', 'download')
+        self.search_element(driver, 'table', 'crosstab', click=True)
+        self.wait_element(driver, 'table', 'pop-up')
+        self.search_element(driver, 'table', 'csv', click=True)
+        self.search_element(driver, 'table', 'btn', click=True)
+        sleep(2)
 
     # authentication keys for game providers
     def getOTP(self):

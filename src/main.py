@@ -20,40 +20,24 @@ class Tableau(Helper):
         self.files = self.env('files', True)
         self.week_files = self.env('week_files', True)
         self.downloads = os.path.expanduser("~/Downloads")
-
-    def mondayCheck(self):
-        # get last week's date
-        today = datetime.now(ZoneInfo("Asia/Manila"))
-        last_monday = today - timedelta(days=7)
-        last_sunday = today - timedelta(days=1)
-
-        date_str = today.strftime("%Y-%m-%d")
-        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-        return date_obj.weekday(), last_monday, last_sunday
-
-    def navigate(self, driver):
-
-        def download():
-            driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
-            self.wait_element(driver, 'table', 'download')
-            self.search_element(driver, 'table', 'crosstab', click=True)
-            self.wait_element(driver, 'table', 'pop-up')
-            self.search_element(driver, 'table', 'csv', click=True)
-            self.search_element(driver, 'table', 'btn', click=True)
-
-        # data table page
+    
+    def _iframe(self, driver):
         iframe = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
         self.wait_element(driver, 'table', 'data', timeout=180)
-        download()
-        today, last_monday, last_sunday = self.mondayCheck()
-        if today == 0:
+    
+    def navigate(self, driver):
+        # data table page
+        self._iframe(driver)
+        self.download(driver)
+        info = self.getWeekInfo()
+        if info["weekday_index"] == 0:
             self.wait_element(driver, 'table', 'date-1')
             dates = {
-                    'date-1': last_monday.strftime("%Y-%m-%d"),
-                    'date-2': last_sunday.strftime("%Y-%m-%d")
+                    'date-1': info["monday"],
+                    'date-2': info["sunday"]
                     }
 
             for key, val in dates.items():
@@ -65,7 +49,7 @@ class Tableau(Helper):
             setDate = self.search_element(driver, 'table', 'date-2')
             setDate.send_keys(Keys.ENTER)
             sleep(7)
-            download()
+            self.download(driver)
         sleep(2)
         self.moveFiles()
 
@@ -98,7 +82,26 @@ class Tableau(Helper):
             self.navigate(driver)
 
         driver.get(self.env('statistics'))
-        self.navigate(driver)
+        self._iframe(driver)
+        self.download(driver)
+
+        info = self.getWeekInfo()
+        if info["weekday_index"] == 0:
+            driver.get(self.env('statistics'))
+            iframe = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+            )
+            driver.switch_to.frame(iframe)
+            self.wait_element(driver, 'table', 'data', timeout=180)
+
+            for date in info["full_week"]:
+                setDate = self.search_element(driver, 'table', 'date-s')
+                setDate.send_keys(Keys.COMMAND, 'a')
+                setDate.send_keys(Keys.BACKSPACE)
+                setDate.send_keys(date)
+                self.download(driver)
+
+            self.moveFiles()
 
     def gameData(self):
 
@@ -109,7 +112,7 @@ class Tableau(Helper):
             y = ast.literal_eval(x) if x else {}
             self.modifyFiles(y)
 
-        def sample(mode, stats, theFiles):
+        def dateList(mode, stats, theFiles):
             target = Path.home() / f"Downloads/{mode}"
             for name in theFiles:
 
@@ -149,10 +152,10 @@ class Tableau(Helper):
                         cleaned_temp.append(new_row)
 
                     filtered_data = []
-                    removeIndex = {4, 5, 6, 7}
+                    removeIndex = {4, 5, 6}
 
-                    today, _, _ = self.mondayCheck()
-                    dataList = cleaned_temp if today == 0 else temp
+                    info = self.getWeekInfo()
+                    dataList = cleaned_temp if info["weekday_index"] == 0 else temp
 
                     for row in dataList:
                         moved_value = row[3] if len(row) > 3 else None
@@ -180,8 +183,8 @@ class Tableau(Helper):
                 filter_name = name.replace('.csv','').strip()
                 self.sheet.populateSheet(filter_name, f'A2', temp)
 
-        sample("daily", "stats", self.files)
-        sample("weekly", "week_stats", self.week_files)
+        dateList("daily", "stats", self.files)
+        dateList("weekly", "week_stats", self.week_files)
 
         self.clearFolders()
 
