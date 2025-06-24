@@ -25,4 +25,5 @@ table:
   csv:                                         "div[aria-label='Download Crosstab'] .horizontal > label:last-child"
   btn:                                         "div[aria-label='Download Crosstab'] .low-density"
   data:                                        "div.tab-clip > div:nth-child(6)"
-
+  date-1:                                      "#tabZoneId12 .QueryBox"
+  date-2:                                      "#tabZoneId14 .QueryBox"

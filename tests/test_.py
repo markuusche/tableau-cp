@@ -9,4 +9,4 @@ class Test:
         self.data.gameReport(driver)
     
     def test_data(self):
-        self.data.getData()
+        self.data.gameData()

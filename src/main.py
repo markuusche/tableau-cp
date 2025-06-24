@@ -1,10 +1,12 @@
-import os, ast
-import re
 import csv
+import os, ast
+from pathlib import Path
 from time import sleep
 from pathlib import Path
+from zoneinfo import ZoneInfo  
 from src.helper.utils import Helper
 from src.api.sheet import GoogleSheet
+from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -16,25 +18,59 @@ class Tableau(Helper):
     def __init__(self):
         self.sheet = GoogleSheet()
         self.files = self.env('files', True)
+        self.week_files = self.env('week_files', True)
         self.downloads = os.path.expanduser("~/Downloads")
 
+    def mondayCheck(self):
+        # get last week's date
+        today = datetime.now(ZoneInfo("Asia/Manila"))
+        last_monday = today - timedelta(days=7)
+        last_sunday = today - timedelta(days=1)
+
+        date_str = today.strftime("%Y-%m-%d")
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        return date_obj.weekday(), last_monday, last_sunday
+
     def navigate(self, driver):
+
+        def download():
+            driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
+            self.wait_element(driver, 'table', 'download')
+            self.search_element(driver, 'table', 'crosstab', click=True)
+            self.wait_element(driver, 'table', 'pop-up')
+            self.search_element(driver, 'table', 'csv', click=True)
+            self.search_element(driver, 'table', 'btn', click=True)
+
         # data table page
         iframe = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
         self.wait_element(driver, 'table', 'data', timeout=180)
-        driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
-        self.wait_element(driver, 'table', 'download')
-        self.search_element(driver, 'table', 'crosstab', click=True)
-        self.wait_element(driver, 'table', 'pop-up')
-        self.search_element(driver, 'table', 'csv', click=True)
-        self.search_element(driver, 'table', 'btn', click=True)
-        sleep(2)
+        download()
+        today, last_monday, last_sunday = self.mondayCheck()
+        if today == 0:
+            self.wait_element(driver, 'table', 'date-1')
+            dates = {
+                    'date-1': last_monday.strftime("%Y-%m-%d"),
+                    'date-2': last_sunday.strftime("%Y-%m-%d")
+                    }
 
+            for key, val in dates.items():
+                setDate = self.search_element(driver, 'table', key)
+                setDate.send_keys(Keys.COMMAND, 'a')
+                setDate.send_keys(Keys.BACKSPACE)
+                setDate.send_keys(val)
+
+            setDate = self.search_element(driver, 'table', 'date-2')
+            setDate.send_keys(Keys.ENTER)
+            sleep(7)
+            download()
+        sleep(2)
+        self.moveFiles()
+
+    # login user
     def userLogin(self, driver):
-        # userLogin
         self.wait_element(driver, 'login', 'email')
         email = self.search_element(driver, 'login', 'email')
         email.send_keys(self.env('email'))
@@ -59,140 +95,93 @@ class Tableau(Helper):
         categories = self.env('categories', True)
         for item in categories:
             driver.get(self.env('tableau') + f"Category={item}")
-            self.navigate(driver) 
-        
+            self.navigate(driver)
+
         driver.get(self.env('statistics'))
         self.navigate(driver)
 
-    def modifyFiles(self, fileNames={}):
+    def gameData(self):
 
-        # rename downloaded files
-        file_renames = fileNames
+        # rename the files
+        names = ['file_names', 'weekly_names']
+        for name in names:
+            x = self.env(name)
+            y = ast.literal_eval(x) if x else {}
+            self.modifyFiles(y)
 
-        for old_name, new_name in file_renames.items():
-            old_path = os.path.join(self.downloads, old_name)
-            new_path = os.path.join(self.downloads, new_name)
-            if os.path.exists(old_path):
-                os.rename(old_path, new_path)
-            else:
-                print(f"\nFile not found: {old_name}")
+        def sample(mode, stats, theFiles):
+            target = Path.home() / f"Downloads/{mode}"
+            for name in theFiles:
 
-    def getData(self):
+                temp = []
 
-        file_names = self.env('file_names')
-        names = ast.literal_eval(file_names) if file_names else {}
-        self.modifyFiles(names)
-        
-        def clean_first_column(value):
-            value = value.replace("IP_", "").replace("IP", "").strip()
-            value = re.sub(r'(FC)$', r' \1', value).strip()
+                file = target / name
+                if not file.exists():
+                    continue
 
-            provider_mapping = {
-                "CAS": self.env("CAS"),
-                "GAM": self.env("GAM")
-            }
+                with open(file, newline='', encoding='utf-16') as csvfile:
+                    reader = csv.reader(csvfile, delimiter='\t')
+                    for i, row in enumerate(reader):
+                        if i < 2 and name != self.env(stats):
+                            continue
+                        if i < 1 and name == self.env(stats):
+                            continue
+                        if not row:
+                            continue
 
-            match = re.match(r"^([A-Z]{2,3})(.*?)([A-Z]{2,})$", value)
-            if match:
-                raw_provider, game_name, vendor = match.groups()
-                provider = provider_mapping.get(raw_provider, raw_provider)
+                        new_cols = self.filterList(row[0])
+                        remaining_cols = row[1:]
+                        row = new_cols + remaining_cols
+                        temp.append(row)
 
-                game_name = game_name.replace("INO GAME", "").strip()
-                if game_name.endswith(self.env("EV")):
-                    game_name = game_name[:-len(self.env("EV"))].strip()
-                    vendor = f"{self.env("EVE")} {vendor}"
-                
-                for unwanted in ["INO GAME", "E SHOW"]:
-                    game_name = game_name.replace(unwanted, "").strip()
-                
-                if not game_name and re.match(r"[A-Z]{3,}[A-Z]{2,}$", vendor):
-                    split_match = re.match(r"^([A-Z]+?)([A-Z]{2,})$", vendor)
-                    if split_match:
-                        game_name, vendor = split_match.groups()
-                
-                vendor_prefixes = ["XL", "X", "CAISHEN", "II", "WINS", "ILO", "DNT", "I"] # in case need to filter more
-                for prefix in vendor_prefixes:
-                    if vendor.startswith(prefix):
-                        game_name = f"{game_name} {prefix}".strip()
-                        vendor = vendor[len(prefix):].strip()
-                        break
+                if name != stats:
+                    cleaned_temp = []
 
-                vendor = vendor.replace("_", " ").strip()
-                return [provider, game_name, vendor]
+                    for row in temp:
+                        if len(row) > 4:
+                            date_range = f"{row[3]} - {row[4]}"
+                        else:
+                            date_range = row[3] if len(row) > 3 else ""
 
-            match2 = re.match(r"^(.*?)([A-Z]{2,})$", value)
-            if match2:
-                game_name, vendor = match2.groups()
-                return [provider_mapping.get("CAS", self.env("CAS")), game_name.strip(), vendor.strip()]
+                        new_row = row.copy()
+                        new_row[3] = date_range
+                        del new_row[4]
+                        cleaned_temp.append(new_row)
 
-            return [provider_mapping.get(value.strip(), value.strip())]
+                    filtered_data = []
+                    removeIndex = {4, 5, 6, 7}
 
-        target = Path.home() / "Downloads"
-        stats = self.env("stats")
-        for name in self.files:
+                    today, _, _ = self.mondayCheck()
+                    dataList = cleaned_temp if today == 0 else temp
 
-            temp = []
-
-            file = target / name
-            if not file.exists():
-                continue
-
-            with open(file, newline='', encoding='utf-16') as csvfile:
-                reader = csv.reader(csvfile, delimiter='\t')
-                for i, row in enumerate(reader):
-                    if i < 2 and name != stats: 
-                        continue
-                        
-                    if i < 1 and name == stats:
-                        continue
-
-                    if not row:
-                        continue
-
-                    new_cols = clean_first_column(row[0])
-                    remaining_cols = row[1:]
-
-                    row = new_cols + remaining_cols
-                    temp.append(row)
-
-            # print(temp)
-
-            if name != stats:
-                removeIndex = {4, 5, 6, 7}
-
-                cleaned_temp = []
-
-                for row in temp:
-                    moved_value = row[3] if len(row) > 3 else None
-                    cleaned_row = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
-                    if moved_value is not None:
+                    for row in dataList:
+                        moved_value = row[3] if len(row) > 3 else None
+                        cleaned_row = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
+                        if moved_value is not None:
                             cleaned_row.insert(0, moved_value)
+                        filtered_data.append(cleaned_row)
 
-                    cleaned_temp.append(cleaned_row)
+                    temp = filtered_data
 
-                temp = cleaned_temp
+                # print(temp)
 
-            if name == stats:
+                if name == stats:
 
-                updated_temp = []
+                    updated_temp = []
 
-                for i, row in enumerate(temp):
-                    new_row = row.copy()
-                    if i != 0 and len(new_row) > 0:
-                        new_row[0] = "" 
-                    updated_temp.append(new_row)
+                    for i, row in enumerate(temp):
+                        new_row = row.copy()
+                        if i != 0 and len(new_row) > 0:
+                            new_row[0] = "" 
+                        updated_temp.append(new_row)
 
-                temp = updated_temp
+                    temp = updated_temp
 
-            filter_name = name.replace('.csv','').strip()
+                filter_name = name.replace('.csv','').strip()
+                self.sheet.populateSheet(filter_name, f'A2', temp)
 
-            self.sheet.populateSheet(filter_name, f'A2', temp)
+        sample("daily", "stats", self.files)
+        sample("weekly", "week_stats", self.week_files)
 
-        # delete downloaded file
-        for filename in self.files:
-            file_path = os.path.join(self.downloads, filename)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            else:
-                print(f"\nFile not found: {filename}")
+        self.clearFolders()
 
