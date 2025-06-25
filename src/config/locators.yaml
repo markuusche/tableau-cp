@@ -9,6 +9,7 @@ otp:
   field:                                       "#input-9"
   box:                                         ".slds-box"
   btn:                                         "button[type='submit']"
+  root:                                        "#root"
 
 dashboard:
   pop-up:                                      "div[data-tb-test-id=postlogin-test-id-Dialog-Floater-Root]"

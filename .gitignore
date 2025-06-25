@@ -6,3 +6,4 @@ __pycache__/
 .pytest_cache/
 .cache/
 asd.py
+.DS_Store

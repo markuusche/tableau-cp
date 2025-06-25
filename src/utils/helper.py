@@ -15,7 +15,7 @@ class Helper:
 
     #locator fetch helper 
     def data(self, *keys):
-        with open('src/locators.yaml','r') as file:
+        with open('src/config/locators.yaml','r') as file:
             getData = yaml.load(file, Loader=yaml.FullLoader)
 
         for key in keys:
@@ -98,33 +98,27 @@ class Helper:
             if os.path.isfile(filepath) and filename.startswith(self.env("st")):
                 destination = os.path.join(stats_folder, filename)
                 shutil.move(filepath, destination)
-
-    # rename the files 
-    def modifyFiles(self, fileNames={}):
-        base_downloads = os.path.expanduser("~/Downloads")
-        daily_folder = os.path.join(base_downloads, "daily")
-        weekly_folder = os.path.join(base_downloads, "weekly")
-
-        # rename files in daily and weekly folders
-        file_renames = fileNames
-        for old_name, new_name in file_renames.items():
-            # daily
-            old_path = os.path.join(daily_folder, old_name)
-            if os.path.exists(old_path):
-                new_path = os.path.join(daily_folder, new_name)
-                os.rename(old_path, new_path)
-                print(f"Renamed in daily: {old_name} → {new_name}")
-                continue  
-
-            # weekly
-            old_path = os.path.join(weekly_folder, old_name)
-            if os.path.exists(old_path):
-                new_path = os.path.join(weekly_folder, new_name)
-                os.rename(old_path, new_path)
-                print(f"Renamed in weekly: {old_name} → {new_name}")
-            else:
-                print(f"File not found in either folder: {old_name}")
     
+    # rename the files 
+    def modifyFiles(self):
+        base_downloads = os.path.expanduser("~/Downloads")
+        folders = {
+            'file_names': os.path.join(base_downloads, "daily"),
+            'weekly_names': os.path.join(base_downloads, "weekly"),
+            'stats_week_names': os.path.join(base_downloads, "stats"),
+        }
+
+        def rename(folder, old_name, new_name):
+            old_path = os.path.join(folder, old_name)
+            if os.path.exists(old_path):
+                new_path = os.path.join(folder, new_name)
+                os.rename(old_path, new_path)
+
+        for env_key, folder_path in folders.items():
+            file_map = ast.literal_eval(self.env(env_key) or "{}")
+            for old, new in file_map.items():
+                rename(folder_path, old, new)
+
      # filters items from the list
     def filterList(self, value):
         value = value.replace("IP_", "").replace("IP", "").strip()
@@ -232,3 +226,14 @@ class Helper:
         path = (By.CSS_SELECTOR, self.data(*keys))
         element = WebDriverWait(driver, timeout)
         element.until(EC.visibility_of_element_located(path))
+    
+    def wait_element_invisibility(self, driver, *keys, absolute=False, timeout=120):
+        try:
+            locator = (By.CSS_SELECTOR, self.data(*keys))
+            element = WebDriverWait(driver, timeout)
+            if absolute:
+                element.until(EC.invisibility_of_element_located(locator))
+            else:  
+                element.until(EC.invisibility_of_element(locator))
+        except:
+            print(f'\033[91m[ FAILED ] "{locator}" element still diplayed.')

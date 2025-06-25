@@ -1,7 +1,7 @@
 import re
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from src.helper.utils import Helper
+from src.utils.helper import Helper
 helper = Helper()
 
 class GoogleSheet:

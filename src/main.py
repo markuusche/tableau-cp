@@ -4,7 +4,7 @@ from pathlib import Path
 from time import sleep
 from pathlib import Path
 from zoneinfo import ZoneInfo  
-from src.helper.utils import Helper
+from src.utils.helper import Helper
 from src.api.sheet import GoogleSheet
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
@@ -19,6 +19,7 @@ class Tableau(Helper):
         self.sheet = GoogleSheet()
         self.files = self.env('files', True)
         self.week_files = self.env('week_files', True)
+        self.weekly_stats_files = self.env('weekly_stats_files', True)
         self.downloads = os.path.expanduser("~/Downloads")
     
     def _iframe(self, driver):
@@ -59,13 +60,20 @@ class Tableau(Helper):
         email = self.search_element(driver, 'login', 'email')
         email.send_keys(self.env('email'))
         self.search_element(driver, 'login', 'btn', click=True)
-        self.wait_element(driver, 'login', 'cookies')
+        self.wait_element(driver, 'login', 'pass')
         self.search_element(driver, 'login', 'cookies', click=True)
-        self.wait_element(driver, 'login', 'email')
+        self.wait_element_invisibility(driver, 'login', 'cookies')
+        self.wait_element(driver, 'login', 'pass')
         password = self.search_element(driver, 'login', 'pass')
         password.send_keys(self.env('pass'))
         self.search_element(driver, 'login', 'sign-in', click=True)
-        sleep(7)
+
+        while True:
+            if self.env("sf") in driver.current_url:
+                break
+
+        driver.execute_script("return document.readyState") == "complete"
+        sleep(2)
         actions = ActionChains(driver)
         key = self.getOTP()
         actions.send_keys(key).perform()
@@ -101,33 +109,35 @@ class Tableau(Helper):
                 setDate.send_keys(date)
                 self.download(driver)
 
-            self.moveFiles()
+        self.moveFiles()
 
     def gameData(self):
 
-        # rename the files
-        names = ['file_names', 'weekly_names']
-        for name in names:
-            x = self.env(name)
-            y = ast.literal_eval(x) if x else {}
-            self.modifyFiles(y)
+        # renames files
+        self.modifyFiles()
 
-        def dateList(mode, stats, theFiles):
+        # data fetch/filtering
+        def dataList(mode, stats, theFiles):
             target = Path.home() / f"Downloads/{mode}"
             for name in theFiles:
 
                 temp = []
 
                 file = target / name
+
+                statsList = self.env(stats)
+                envStats = statsList.replace(".csv", "")
+                nameFilter = name.replace(".csv","")
+
                 if not file.exists():
                     continue
 
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader):
-                        if i < 2 and name != self.env(stats):
+                        if i < 2 and nameFilter != envStats:
                             continue
-                        if i < 1 and name == self.env(stats):
+                        if i < 1 and envStats in nameFilter:
                             continue
                         if not row:
                             continue
@@ -137,7 +147,7 @@ class Tableau(Helper):
                         row = new_cols + remaining_cols
                         temp.append(row)
 
-                if name != stats:
+                if nameFilter != envStats:
                     cleaned_temp = []
 
                     for row in temp:
@@ -151,25 +161,26 @@ class Tableau(Helper):
                         del new_row[4]
                         cleaned_temp.append(new_row)
 
-                    filtered_data = []
-                    removeIndex = {4, 5, 6}
-
                     info = self.getWeekInfo()
-                    dataList = cleaned_temp if info["weekday_index"] == 0 else temp
+                
+                    def trasnfromRows(data):
+                        result = []
+                        removeIndex = {4, 5, 6, 7} if stats == "stats" else {4, 5, 6}
+                        for row in data:
+                            moveIndex = row[3] if len(row) > 3 else None
+                            filterRow = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
+                            if moveIndex is not None:
+                                filterRow.insert(0, moveIndex)
+                            result.append(filterRow)
+                        
+                        return result
+                    
+                    daily = trasnfromRows(temp)
+                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats == "week_stats" else ""
 
-                    for row in dataList:
-                        moved_value = row[3] if len(row) > 3 else None
-                        cleaned_row = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
-                        if moved_value is not None:
-                            cleaned_row.insert(0, moved_value)
-                        filtered_data.append(cleaned_row)
-
-                    temp = filtered_data
-
-                # print(temp)
-
-                if name == stats:
-
+                # sts for stats, I aint got time to think variable names ;0
+                sts = envStats if stats == "stats" else envStats.replace("(Weekly)", "")
+                if sts in nameFilter:
                     updated_temp = []
 
                     for i, row in enumerate(temp):
@@ -178,13 +189,22 @@ class Tableau(Helper):
                             new_row[0] = "" 
                         updated_temp.append(new_row)
 
+                    daily = updated_temp
+                    weekly = updated_temp
                     temp = updated_temp
 
-                filter_name = name.replace('.csv','').strip()
-                self.sheet.populateSheet(filter_name, f'A2', temp)
+                if info["weekday_index"] == 0 and stats == "week_stats":
+                    if "Statistics (" in nameFilter:
+                        weekly = temp
+                        self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
+                    else:
+                        self.sheet.populateSheet(nameFilter, f'A2', weekly)
+                else:
+                    print(nameFilter)
+                    self.sheet.populateSheet(nameFilter, f'A2', daily)
 
-        dateList("daily", "stats", self.files)
-        dateList("weekly", "week_stats", self.week_files)
+        dataList("daily", "stats", self.files)
+        dataList("weekly", "week_stats", self.week_files)
+        dataList("stats", "week_stats", self.weekly_stats_files)
 
         self.clearFolders()
-

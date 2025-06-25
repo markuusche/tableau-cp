@@ -1,6 +1,6 @@
 import pytest
 from selenium import webdriver
-from src.helper.utils import Helper
+from src.utils.helper import Helper
 
 @pytest.fixture(scope='session')
 def driver():
