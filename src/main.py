@@ -78,7 +78,7 @@ class Tableau(Helper):
         key = self.getOTP()
         actions.send_keys(key).perform()
         actions.send_keys(Keys.ENTER).perform()
-        self.wait_element(driver, 'dashboard', 'pop-up')
+        self.wait_element(driver, 'dashboard', 'logo')
 
     # Full game report workbook
     def gameReport(self, driver):
@@ -135,9 +135,11 @@ class Tableau(Helper):
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader):
-                        if i < 2 and nameFilter != envStats:
+                        filterStats = envStats.replace("Weekly", "").replace("()", "")
+
+                        if i < 2 and filterStats not in nameFilter:
                             continue
-                        if i < 1 and envStats in nameFilter:
+                        if i < 1 and filterStats in nameFilter:
                             continue
                         if not row:
                             continue
@@ -200,7 +202,6 @@ class Tableau(Helper):
                     else:
                         self.sheet.populateSheet(nameFilter, f'A2', weekly)
                 else:
-                    print(nameFilter)
                     self.sheet.populateSheet(nameFilter, f'A2', daily)
 
         dataList("daily", "stats", self.files)

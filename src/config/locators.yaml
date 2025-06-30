@@ -12,7 +12,7 @@ otp:
   root:                                        "#root"
 
 dashboard:
-  pop-up:                                      "div[data-tb-test-id=postlogin-test-id-Dialog-Floater-Root]"
+  logo:                                      "a[title='Bivision']"
 
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
