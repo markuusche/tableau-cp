@@ -189,17 +189,32 @@ class Helper:
 
         full_week = [(monday + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
 
+        # check if the day today is the first day of the month? stupid
+        last_month_dates = []
+        if date_obj.day == 30:
+            first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
+            last_of_last_month = date_obj.replace(day=1) - timedelta(days=1)
+            last_month_dates = [
+                (first_of_last_month + timedelta(days=i)).strftime("%Y-%m-%d")
+                for i in range((last_of_last_month - first_of_last_month).days + 1)
+            ]
+
         return {
             "today": date_str,
             "weekday_index": weekday_index,
             "monday": monday.strftime("%Y-%m-%d"),
             "sunday": sunday.strftime("%Y-%m-%d"),
-            "full_week": full_week
+            "full_week": full_week,
+            "last_month_dates": last_month_dates
         }
     
     # download data page
     def download(self, driver):
-        driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
+        ## ============== STOPPED HERE == !@!!
+        cursor = self.search_element(driver, 'table', 'glass')
+        WebDriverWait(driver, 20).until(lambda a: cursor.value_of_css_property("cursor") == "default")
+        self.wait_clickable(driver, 'table', 'download-btn')
+        # driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
         self.wait_element(driver, 'table', 'download')
         self.search_element(driver, 'table', 'crosstab', click=True)
         self.wait_element(driver, 'table', 'pop-up')
@@ -237,3 +252,10 @@ class Helper:
                 element.until(EC.invisibility_of_element(locator))
         except:
             print(f'\033[91m[ FAILED ] "{locator}" element still diplayed.')
+    
+    def wait_clickable(self, driver, *keys, timeout=60):
+        locator = (By.CSS_SELECTOR, self.data(*keys))
+        wait = WebDriverWait(driver, timeout)
+        element = wait.until(EC.element_to_be_clickable(locator),
+        message=f'\033[91m[ FAILED ] "{locator}" element was not clickable.')
+        element.click()

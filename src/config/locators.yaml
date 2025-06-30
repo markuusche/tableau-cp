@@ -16,7 +16,7 @@ dashboard:
 
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
-  download-btn:                                "#viz-viewer-toolbar > div:last-child #download"
+  download-btn:                                "div:last-child #download"
   iframe:                                      "iframe[title]"
   category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
   dropdown:                                    "div.tileContainer"
@@ -29,3 +29,9 @@ table:
   date-1:                                      "#tabZoneId12 .QueryBox"
   date-2:                                      "#tabZoneId14 .QueryBox"
   date-s:                                      "textarea[class='QueryBox']"
+  title:                                       "#tableauTabbedNavigation_tab_8"
+  game:         "#tabZoneId21 .CFContent .QueryBox"
+  glass:        "div#loadingGlassPane"
+
+
+x: "div[class='tab-clip'] > div:nth-child(6) img"
