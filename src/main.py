@@ -19,7 +19,7 @@ class Tableau(Helper):
         self.sheet = GoogleSheet()
         self.files = self.env('files', True)
         self.week_files = self.env('week_files', True)
-        self.weekly_stats_files = self.env('weekly_stats_files', True)
+        self.weekly_stats_files = self.env('wkstat', True)
         self.downloads = os.path.expanduser("~/Downloads")
     
     def _iframe(self, driver):
@@ -91,50 +91,31 @@ class Tableau(Helper):
     # Full game report workbook
     def gameReport(self, driver):
         self.userLogin(driver)
-        # dashboard
-        categories = self.env('categories', True)
-        for item in categories:
-            driver.get(self.env('tableau') + f"Category={item}")
-            self.navigate(driver)
-
         driver.get(self.env('statistics'))
         self._iframe(driver)
-        self.download(driver)
 
-        # send date info to date text field
-        info = self.getWeekInfo()
-        def inputDate(data):
-            driver.get(self.env('statistics'))
-            iframe = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.TAG_NAME, "iframe"))
-            )
-            driver.switch_to.frame(iframe)
-            self.wait_element(driver, 'table', 'data', timeout=180)
+        from datetime import date, timedelta
+        start = date(2025, 6, 1)
+        end = date(2025, 6, 30)
 
-            for date in data:
-                setDate = self.search_element(driver, 'table', 'date-s')
-                setDate.send_keys(Keys.COMMAND, 'a')
-                setDate.send_keys(Keys.BACKSPACE)
-                setDate.send_keys(date)
-                self.download(driver)
-            
+        dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
+        self.wait_element(driver, 'table', 'data', timeout=180)
+
+        for date in dates:
             setDate = self.search_element(driver, 'table', 'date-s')
-            setDate.send_keys(Keys.ENTER)
-
-        # get weekly data
-        if info["weekday_index"] == 0:
-            inputDate(info["full_week"])
+            setDate.send_keys(Keys.COMMAND, 'a')
+            setDate.send_keys(Keys.BACKSPACE)
+            setDate.send_keys(date)
+            self.download(driver)
         
-        # get monthly data
-        if len(info["last_month_dates"]) != 0:
-            inputDate(info["last_month_dates"])
-
-        self.moveFiles()
-
+        setDate = self.search_element(driver, 'table', 'date-s')
+        setDate.send_keys(Keys.ENTER)
+        sleep(1)
+        
     def gameData(self):
 
         # renames files
-        self.modifyFiles()
+        # self.modifyFiles()
 
         # data fetch/filtering
         def dataList(mode, stats, theFiles):
@@ -215,17 +196,18 @@ class Tableau(Helper):
                     weekly = updated_temp
                     temp = updated_temp
 
-                if info["weekday_index"] == 0 and stats == "week_stats":
-                    if "Statistics (" in nameFilter:
-                        weekly = temp
-                        self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
-                    else:
-                        self.sheet.populateSheet(nameFilter, f'A2', weekly)
-                else:
-                    self.sheet.populateSheet(nameFilter, f'A2', daily)
 
-        dataList("daily", "stats", self.files)
-        dataList("weekly", "week_stats", self.week_files)
+                # if info["weekday_index"] == 0 and stats == "week_stats":
+                #     if "Statistics (" in nameFilter:
+                #         weekly = temp
+                #         self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
+                #     else:
+                #         self.sheet.populateSheet(nameFilter, f'A2', weekly)
+                # else:
+                self.sheet.populateSheet("Statistics", f'A2', weekly)
+
+        # dataList("daily", "stats", self.files)
+        # dataList("weekly", "week_stats", self.week_files)
         dataList("stats", "week_stats", self.weekly_stats_files)
 
-        self.clearFolders()
+        # self.clearFolders()
