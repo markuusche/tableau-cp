@@ -93,14 +93,14 @@ class Tableau(Helper):
         self.userLogin(driver)
         driver.get(self.env('statistics'))
         self._iframe(driver)
-
-        from datetime import date, timedelta
-        start = date(2025, 6, 1)
-        end = date(2025, 6, 30)
-
-        dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
         self.wait_element(driver, 'table', 'data', timeout=180)
 
+        from datetime import date, timedelta
+        start = date(2025, 6, 9)
+        end = date(2025, 6, 15)
+
+        dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
+        sleep(2)
         for date in dates:
             setDate = self.search_element(driver, 'table', 'date-s')
             setDate.send_keys(Keys.COMMAND, 'a')
@@ -204,7 +204,7 @@ class Tableau(Helper):
                 #     else:
                 #         self.sheet.populateSheet(nameFilter, f'A2', weekly)
                 # else:
-                self.sheet.populateSheet("Statistics", f'A2', weekly)
+                self.sheet.populateSheet("Statistics (Weekly)", f'A2', weekly)
 
         # dataList("daily", "stats", self.files)
         # dataList("weekly", "week_stats", self.week_files)
