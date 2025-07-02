@@ -21,7 +21,7 @@ table:
   category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
   dropdown:                                    "div.tileContainer"
   download:                                    "div[aria-labelledby='download']"
-  crosstab:                                    "div[aria-labelledby='download'] > div:nth-child(3)"
+  crosstab:                                    "div[aria-labelledby='download'] > div:nth-child(3) span:last-child"
   pop-up:                                      "div[aria-label='Download Crosstab']"
   csv:                                         "div[aria-label='Download Crosstab'] .horizontal > label:last-child"
   btn:                                         "div[aria-label='Download Crosstab'] .low-density"

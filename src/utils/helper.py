@@ -40,7 +40,7 @@ class Helper:
         return names
     
     # about files
-    def moveFiles(self):
+    def moveFiles(self, daily=True, week=False, month=False):
 
         def get_clean_basename(filename):
             base, ext = os.path.splitext(filename)
@@ -63,42 +63,64 @@ class Helper:
         weekly_folder = f"/Users/{user}/Downloads/weekly"
         daily_folder = f"/Users/{user}/Downloads/daily"
         stats_folder = os.path.join(downloads, "stats")
+        monthly_folder = os.path.join(downloads, "monthly")
+        stats_monhtly = os.path.join(downloads, "stats_monthly")
 
         os.makedirs(weekly_folder, exist_ok=True)
         os.makedirs(daily_folder, exist_ok=True)
         os.makedirs(stats_folder, exist_ok=True)
+        os.makedirs(monthly_folder, exist_ok=True)
+        os.makedirs(stats_monhtly, exist_ok=True)
 
+        info = self.getWeekInfo()
         files = self.renameFiles('file_names')
         file_renames = files
+        if daily:
+            for original_name in file_renames.keys():
+                source_path = os.path.join(downloads, original_name)
+                daily_target_path = os.path.join(daily_folder, original_name)
 
-        for original_name in file_renames.keys():
-            source_path = os.path.join(downloads, original_name)
-            daily_target_path = os.path.join(daily_folder, original_name)
+                if os.path.exists(source_path):
+                    
+                    if "关键页面" in original_name:
+                        if month:
+                            continue
+                        elif os.path.exists(daily_target_path):
+                            continue
 
-            if os.path.exists(source_path):
-                
-                if self.env("st") in original_name and os.path.exists(daily_target_path):
-                    continue
+                    if "daily_game (1)" in original_name:
+                        target_folder = weekly_folder
+                    elif "daily_game" in original_name or ("关键页面" in original_name and not month):
+                        target_folder = daily_folder
+                    else:
+                        continue
 
-                if self.env("dg1") in original_name:
-                    target_folder = weekly_folder
-                elif self.env("dg") in original_name or self.env("st") in original_name:
-                    target_folder = daily_folder
+                    destination = get_unique_path(target_folder, original_name)
+                    shutil.move(source_path, destination)
                 else:
-                    continue
+                    print(f"File not found: {original_name}")
+            
+        if week:
+            # move stats file separately to a folder
+            for filename in os.listdir(downloads):
+                filepath = os.path.join(downloads, filename)
+                if os.path.isfile(filepath) and filename.startswith("关键页面"):
+                    destination = os.path.join(stats_folder, filename)
+                    shutil.move(filepath, destination)
 
-                destination = get_unique_path(target_folder, original_name)
-                shutil.move(source_path, destination)
-            else:
-                print(f"File not found: {original_name}")
-        
-        # move stats file separately to a folder
-        for filename in os.listdir(downloads):
-            filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith(self.env("st")):
-                destination = os.path.join(stats_folder, filename)
-                shutil.move(filepath, destination)
-    
+        if month:
+            stats_month_data = self.env("smf", True)
+
+            def justMove(target, fromFolder, toFolder):
+                for name in target:
+                    path = os.path.join(fromFolder, name)
+                    if os.path.exists(path):
+                        destination = get_unique_path(toFolder, name)
+                        shutil.move(path, destination)
+            
+            justMove(stats_month_data, stats_folder, stats_monhtly)
+
+
     # rename the files 
     def modifyFiles(self):
         base_downloads = os.path.expanduser("~/Downloads")
@@ -191,7 +213,7 @@ class Helper:
 
         # check if the day today is the first day of the month? stupid
         last_month_dates = []
-        if date_obj.day == 30:
+        if date_obj.day == 2:
             first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
             last_of_last_month = date_obj.replace(day=1) - timedelta(days=1)
             last_month_dates = [
@@ -210,16 +232,40 @@ class Helper:
     
     # download data page
     def download(self, driver):
-        ## ============== STOPPED HERE == !@!!
-        cursor = self.search_element(driver, 'table', 'glass')
-        WebDriverWait(driver, 20).until(lambda a: cursor.value_of_css_property("cursor") == "default")
-        self.wait_clickable(driver, 'table', 'download-btn')
-        # driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
+        driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
         self.wait_element(driver, 'table', 'download')
-        self.search_element(driver, 'table', 'crosstab', click=True)
-        self.wait_element(driver, 'table', 'pop-up')
-        self.search_element(driver, 'table', 'csv', click=True)
+
+        # very stupid flaky 
+        while True:
+            try:
+                self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                break
+            except:
+                continue
+            
+        # very very stupid flaky
+        while True:
+            try:
+                self.wait_element(driver, 'table', 'pop-up', timeout=5)
+                break
+            except:
+                try:
+                    self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                except:
+                    break
+
+                continue
+        
+        # another flaky guy
+        while True:
+            try:
+                self.search_element(driver, 'table', 'csv', click=True)
+                break
+            except:
+                continue
+    
         self.search_element(driver, 'table', 'btn', click=True)
+        self.wait_element_invisibility(driver, 'table', 'pop-up')
         sleep(2)
 
     # authentication keys for game providers

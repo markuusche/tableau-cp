@@ -1,5 +1,5 @@
 import csv
-import os, ast
+import os, getpass, shutil, re
 from pathlib import Path
 from time import sleep
 from pathlib import Path
@@ -28,39 +28,6 @@ class Tableau(Helper):
         )
         driver.switch_to.frame(iframe)
         self.wait_element(driver, 'table', 'data', timeout=180)
-    
-    def navigate(self, driver):
-        # data table page
-        self._iframe(driver)
-        self.download(driver)
-
-        # send date info to date text field
-        info = self.getWeekInfo()
-        def inputDate(dateOne, dateTwo):
-            self.wait_element(driver, 'table', 'date-1')
-            dates = {
-                    'date-1': dateOne,
-                    'date-2': dateTwo
-                    }
-
-            for key, val in dates.items():
-                setDate = self.search_element(driver, 'table', key)
-                setDate.send_keys(Keys.COMMAND, 'a')
-                setDate.send_keys(Keys.BACKSPACE)
-                setDate.send_keys(val)
-
-            title = self.search_element(driver, 'table', 'game')
-            title.send_keys(Keys.ENTER)
-            self.download(driver)
-
-        if info["weekday_index"] == 0: # weekly
-            inputDate(info["monday"], info["sunday"])
-        
-        if len(info["last_month_dates"]) != 0: # monthly
-            inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
-
-        sleep(2) # in order to download, need a delay at least this one
-        self.moveFiles()
 
     # login user
     def userLogin(self, driver):
@@ -87,31 +54,86 @@ class Tableau(Helper):
         actions.send_keys(key).perform()
         actions.send_keys(Keys.ENTER).perform()
         self.wait_element(driver, 'dashboard', 'logo')
+    
+    def navigate(self, driver, monthly=False):
+        # data table page
+        self._iframe(driver)
+
+        if not monthly:
+            self.download(driver)
+    
+        self.wait_element(driver, 'table', 'date-1')
+
+        # send date info to date text field
+        info = self.getWeekInfo()
+        def inputDate(dateOne, dateTwo):
+            dates = {
+                    'date-1': dateOne,
+                    'date-2': dateTwo
+                    }
+
+            for key, val in dates.items():
+                setDate = self.search_element(driver, 'table', key)
+                setDate.send_keys(Keys.COMMAND, 'a')
+                setDate.send_keys(Keys.BACKSPACE)
+                setDate.send_keys(val)
+
+            self.download(driver)
+            sleep(2)
+
+        if not monthly:
+            self.moveFiles()
+        
+        month = len(info["last_month_dates"]) != 0
+        week = info["weekday_index"] == 0
+
+        if week: # weekly
+            inputDate(info["monday"], info["sunday"])
+            self.moveFiles(daily=False, week=week)
+        
+        if monthly:
+            inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
+            self.moveFiles()
 
     # Full game report workbook
-    def gameReport(self, driver):
+    def gameReport(self, driver, monthly=False):
         self.userLogin(driver)
+        # dashboard
+        categories = self.env('categories', True)
+        for item in categories:
+            driver.get(self.env('tableau') + f"Category={item}")
+            self.navigate(driver, monthly)
+        
         driver.get(self.env('statistics'))
         self._iframe(driver)
-        self.wait_element(driver, 'table', 'data', timeout=180)
 
-        from datetime import date, timedelta
-        start = date(2025, 6, 9)
-        end = date(2025, 6, 15)
-
-        dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
-        sleep(2)
-        for date in dates:
-            setDate = self.search_element(driver, 'table', 'date-s')
-            setDate.send_keys(Keys.COMMAND, 'a')
-            setDate.send_keys(Keys.BACKSPACE)
-            setDate.send_keys(date)
+        if not monthly:
             self.download(driver)
-        
-        setDate = self.search_element(driver, 'table', 'date-s')
-        setDate.send_keys(Keys.ENTER)
-        sleep(1)
-        
+
+        info = self.getWeekInfo()
+        def inputDate(data):
+            self.wait_element(driver, 'table', 'data', timeout=180)
+
+            for date in data:
+                setDate = self.search_element(driver, 'table', 'date-s')
+                setDate.send_keys(Keys.COMMAND, 'a')
+                setDate.send_keys(Keys.BACKSPACE)
+                setDate.send_keys(date)
+                self.download(driver)
+
+        # month = len(info["last_month_dates"]) != 0
+        week = info["weekday_index"] == 0
+
+        if week:
+            inputDate(info["full_week"][0])
+
+        if not monthly:
+            self.moveFiles(week=week)
+
+        if monthly:
+            inputDate(info["last_month_dates"])
+            self.moveFiles(month=True)
+
     def gameData(self):
 
         # renames files
