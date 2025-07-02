@@ -58,21 +58,15 @@ class Helper:
                 counter += 1
             return os.path.join(folder, candidate)
 
-        user = getpass.getuser()
         downloads = os.path.expanduser("~/Downloads")
-        weekly_folder = f"/Users/{user}/Downloads/weekly"
-        daily_folder = f"/Users/{user}/Downloads/daily"
+        weekly_folder = os.path.join(downloads, "weekly")
+        daily_folder = os.path.join(downloads, "daily")
         stats_folder = os.path.join(downloads, "stats")
-        monthly_folder = os.path.join(downloads, "monthly")
-        stats_monhtly = os.path.join(downloads, "stats_monthly")
 
         os.makedirs(weekly_folder, exist_ok=True)
         os.makedirs(daily_folder, exist_ok=True)
         os.makedirs(stats_folder, exist_ok=True)
-        os.makedirs(monthly_folder, exist_ok=True)
-        os.makedirs(stats_monhtly, exist_ok=True)
 
-        info = self.getWeekInfo()
         files = self.renameFiles('file_names')
         file_renames = files
         if daily:
@@ -82,15 +76,12 @@ class Helper:
 
                 if os.path.exists(source_path):
                     
-                    if "关键页面" in original_name:
-                        if month:
-                            continue
-                        elif os.path.exists(daily_target_path):
-                            continue
+                    if self.env("st") in original_name and os.path.exists(daily_target_path):
+                        continue
 
-                    if "daily_game (1)" in original_name:
+                    if self.env("dg1") in original_name:
                         target_folder = weekly_folder
-                    elif "daily_game" in original_name or ("关键页面" in original_name and not month):
+                    elif self.env("dg") in original_name or self.env("st") in original_name:
                         target_folder = daily_folder
                     else:
                         continue
@@ -109,17 +100,23 @@ class Helper:
                     shutil.move(filepath, destination)
 
         if month:
-            stats_month_data = self.env("smf", True)
+            monthly_folder = os.path.join(downloads, "stats")
+            os.makedirs(monthly_folder, exist_ok=True)
 
-            def justMove(target, fromFolder, toFolder):
-                for name in target:
-                    path = os.path.join(fromFolder, name)
-                    if os.path.exists(path):
-                        destination = get_unique_path(toFolder, name)
-                        shutil.move(path, destination)
-            
-            justMove(stats_month_data, stats_folder, stats_monhtly)
+            unnumbered_file = os.path.join(downloads, "关键页面.csv")
+            if os.path.exists(unnumbered_file):
+                new_path = os.path.join(monthly_folder, "Statistics (1).csv")
+                shutil.move(unnumbered_file, new_path)
 
+            for i in range(1, 33): 
+                old_name = f"关键页面 ({i}).csv"
+                new_name = f"Statistics ({i + 1}).csv"
+
+                old_path = os.path.join(downloads, old_name)
+                new_path = os.path.join(monthly_folder, new_name)
+
+                if os.path.exists(old_path):
+                    shutil.move(old_path, new_path)
 
     # rename the files 
     def modifyFiles(self):
@@ -213,7 +210,7 @@ class Helper:
 
         # check if the day today is the first day of the month? stupid
         last_month_dates = []
-        if date_obj.day == 2:
+        if date_obj.day == 1:
             first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
             last_of_last_month = date_obj.replace(day=1) - timedelta(days=1)
             last_month_dates = [
@@ -239,6 +236,9 @@ class Helper:
         while True:
             try:
                 self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                # popUp = driver.execute_script(f"return document.querySelector('{self.data(driver, 'table', 'pop-up')}') != null;')")
+                # if popUp:
+                print("Hello 1")
                 break
             except:
                 continue
@@ -247,10 +247,12 @@ class Helper:
         while True:
             try:
                 self.wait_element(driver, 'table', 'pop-up', timeout=5)
+                print("Hello 2")
                 break
             except:
                 try:
                     self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                    print("Hello 3")
                 except:
                     break
 
@@ -260,6 +262,7 @@ class Helper:
         while True:
             try:
                 self.search_element(driver, 'table', 'csv', click=True)
+                print("Hello 4")
                 break
             except:
                 continue

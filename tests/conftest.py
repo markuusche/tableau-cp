@@ -2,7 +2,7 @@ import pytest
 from selenium import webdriver
 from src.utils.helper import Helper
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def driver():
     #setup
     URL = Helper()

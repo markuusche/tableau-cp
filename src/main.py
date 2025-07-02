@@ -19,7 +19,8 @@ class Tableau(Helper):
         self.sheet = GoogleSheet()
         self.files = self.env('files', True)
         self.week_files = self.env('week_files', True)
-        self.weekly_stats_files = self.env('wkstat', True)
+        self.monthly_files = self.env('wkstat', True)
+        self.weekly_stats_files = self.env('weekly_stats_files', True)
         self.downloads = os.path.expanduser("~/Downloads")
     
     def _iframe(self, driver):
@@ -27,10 +28,10 @@ class Tableau(Helper):
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=180)
+        self.wait_element(driver, 'table', 'data', timeout=30)
 
     # login user
-    def userLogin(self, driver):
+    def userLogin(self, driver, month):
         self.wait_element(driver, 'login', 'email')
         email = self.search_element(driver, 'login', 'email')
         email.send_keys(self.env('email'))
@@ -38,7 +39,6 @@ class Tableau(Helper):
         self.wait_element(driver, 'login', 'pass')
         self.search_element(driver, 'login', 'cookies', click=True)
         self.wait_element_invisibility(driver, 'login', 'cookies')
-        self.wait_element(driver, 'login', 'pass')
         password = self.search_element(driver, 'login', 'pass')
         password.send_keys(self.env('pass'))
         self.search_element(driver, 'login', 'sign-in', click=True)
@@ -49,11 +49,21 @@ class Tableau(Helper):
 
         driver.execute_script("return document.readyState") == "complete"
         sleep(2)
-        actions = ActionChains(driver)
-        key = self.getOTP()
-        actions.send_keys(key).perform()
-        actions.send_keys(Keys.ENTER).perform()
-        self.wait_element(driver, 'dashboard', 'logo')
+
+        def sendOTP():
+            actions = ActionChains(driver)
+            key = self.getOTP()
+            actions.send_keys(key).perform()
+            actions.send_keys(Keys.ENTER).perform()
+
+        sendOTP()
+        while True:
+            try:
+                self.wait_element(driver, 'dashboard', 'logo')
+                break
+            except:
+                sendOTP()
+                continue
     
     def navigate(self, driver, monthly=False):
         # data table page
@@ -84,12 +94,11 @@ class Tableau(Helper):
         if not monthly:
             self.moveFiles()
         
-        month = len(info["last_month_dates"]) != 0
-        week = info["weekday_index"] == 0
+        week = info["weekday_index"] == 2
 
         if week: # weekly
             inputDate(info["monday"], info["sunday"])
-            self.moveFiles(daily=False, week=week)
+            self.moveFiles(week=week)
         
         if monthly:
             inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
@@ -97,7 +106,7 @@ class Tableau(Helper):
 
     # Full game report workbook
     def gameReport(self, driver, monthly=False):
-        self.userLogin(driver)
+        self.userLogin(driver, monthly)
         # dashboard
         categories = self.env('categories', True)
         for item in categories:
@@ -121,11 +130,10 @@ class Tableau(Helper):
                 setDate.send_keys(date)
                 self.download(driver)
 
-        # month = len(info["last_month_dates"]) != 0
-        week = info["weekday_index"] == 0
+        week = info["weekday_index"] == 2
 
         if week:
-            inputDate(info["full_week"][0])
+            inputDate(info["full_week"])
 
         if not monthly:
             self.moveFiles(week=week)
@@ -134,7 +142,7 @@ class Tableau(Helper):
             inputDate(info["last_month_dates"])
             self.moveFiles(month=True)
 
-    def gameData(self):
+    def gameData(self, month=False):
 
         # renames files
         # self.modifyFiles()
@@ -190,7 +198,11 @@ class Tableau(Helper):
                 
                     def trasnfromRows(data):
                         result = []
-                        removeIndex = {4, 5, 6, 7} if stats == "stats" else {4, 5, 6}
+                        if not month:
+                            removeIndex = {4, 5, 6, 7} if stats == "stats" else {4, 5, 6}
+                        else:
+                            removeIndex = {4, 5, 6}
+
                         for row in data:
                             moveIndex = row[3] if len(row) > 3 else None
                             filterRow = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
@@ -201,7 +213,8 @@ class Tableau(Helper):
                         return result
                     
                     daily = trasnfromRows(temp)
-                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats == "week_stats" else ""
+                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 2 and stats == "week_stats" else ""
+                    monthly = weekly = trasnfromRows(cleaned_temp)
 
                 # sts for stats, I aint got time to think variable names ;0
                 sts = envStats if stats == "stats" else envStats.replace("(Weekly)", "")
@@ -218,18 +231,26 @@ class Tableau(Helper):
                     weekly = updated_temp
                     temp = updated_temp
 
+                if not month:
+                    if info["weekday_index"] == 2 and stats == "week_stats":
+                        if "Statistics (" in nameFilter:
+                            weekly = temp
+                            self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
+                        else:
+                            self.sheet.populateSheet(nameFilter, f'A2', weekly)
+                    else:
+                        self.sheet.populateSheet(nameFilter, f'A2', daily)
+                else:
+                    if "Statistics (" in nameFilter:
+                        weekly = temp
+                        self.sheet.populateSheet("Statistics (Monthly)", f'A2', weekly)
+                    else:
+                        sheet_names = nameFilter + " (Monthly)"
+                        self.sheet.populateSheet(sheet_names, f'A2', monthly)
 
-                # if info["weekday_index"] == 0 and stats == "week_stats":
-                #     if "Statistics (" in nameFilter:
-                #         weekly = temp
-                #         self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
-                #     else:
-                #         self.sheet.populateSheet(nameFilter, f'A2', weekly)
-                # else:
-                self.sheet.populateSheet("Statistics (Weekly)", f'A2', weekly)
-
-        # dataList("daily", "stats", self.files)
-        # dataList("weekly", "week_stats", self.week_files)
-        dataList("stats", "week_stats", self.weekly_stats_files)
+        mnonthly_files = self.monthly_files if month else self.weekly_stats_files
+        dataList("daily", "stats", self.files)
+        dataList("weekly", "week_stats", self.week_files)
+        dataList("stats", "week_stats", mnonthly_files)
 
         # self.clearFolders()
