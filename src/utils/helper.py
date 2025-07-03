@@ -40,7 +40,7 @@ class Helper:
         return names
     
     # about files
-    def moveFiles(self, daily=True, week=False, month=False):
+    def moveFiles(self, month=False):
 
         def get_clean_basename(filename):
             base, ext = os.path.splitext(filename)
@@ -69,57 +69,48 @@ class Helper:
 
         files = self.renameFiles('file_names')
         file_renames = files
-        if daily:
-            for original_name in file_renames.keys():
-                source_path = os.path.join(downloads, original_name)
-                daily_target_path = os.path.join(daily_folder, original_name)
 
-                if os.path.exists(source_path):
-                    
-                    if self.env("st") in original_name and os.path.exists(daily_target_path):
+        for original_name in file_renames.keys():
+            source_path = os.path.join(downloads, original_name)
+            daily_target_path = os.path.join(daily_folder, original_name)
+
+            if os.path.exists(source_path):
+                
+                if self.env("st") in original_name and os.path.exists(daily_target_path):
+                    continue
+
+                if self.env("dg1") in original_name:
+                    target_folder = weekly_folder
+                elif self.env("dg") in original_name or self.env("st") in original_name:
+                    if self.env("st") in original_name and month:
                         continue
-
-                    if self.env("dg1") in original_name:
-                        target_folder = weekly_folder
-                    elif self.env("dg") in original_name or self.env("st") in original_name:
-                        target_folder = daily_folder
-                    else:
-                        continue
-
-                    destination = get_unique_path(target_folder, original_name)
-                    shutil.move(source_path, destination)
+                    target_folder = daily_folder
                 else:
-                    print(f"File not found: {original_name}")
-            
-        if week:
-            # move stats file separately to a folder
-            for filename in os.listdir(downloads):
-                filepath = os.path.join(downloads, filename)
-                if os.path.isfile(filepath) and filename.startswith("关键页面"):
-                    destination = os.path.join(stats_folder, filename)
-                    shutil.move(filepath, destination)
+                    continue
+
+                destination = get_unique_path(target_folder, original_name)
+                shutil.move(source_path, destination)
+            else:
+                print(f"File not found: {original_name}")
+        
+        # move stats file separately to a folder
+        for filename in os.listdir(downloads):
+            filepath = os.path.join(downloads, filename)
+            if os.path.isfile(filepath) and filename.startswith(self.env("st")):
+                destination = os.path.join(stats_folder, filename)
+                shutil.move(filepath, destination)
 
         if month:
             monthly_folder = os.path.join(downloads, "stats")
             os.makedirs(monthly_folder, exist_ok=True)
 
-            unnumbered_file = os.path.join(downloads, "关键页面.csv")
+            unnumbered_file = os.path.join(downloads, f"{self.env("stcv")}")
             if os.path.exists(unnumbered_file):
-                new_path = os.path.join(monthly_folder, "Statistics (1).csv")
+                new_path = os.path.join(monthly_folder, f"{self.env("stss")}")
                 shutil.move(unnumbered_file, new_path)
 
-            for i in range(1, 33): 
-                old_name = f"关键页面 ({i}).csv"
-                new_name = f"Statistics ({i + 1}).csv"
-
-                old_path = os.path.join(downloads, old_name)
-                new_path = os.path.join(monthly_folder, new_name)
-
-                if os.path.exists(old_path):
-                    shutil.move(old_path, new_path)
-
     # rename the files 
-    def modifyFiles(self):
+    def modifyFiles(self, month=False):
         base_downloads = os.path.expanduser("~/Downloads")
         folders = {
             'file_names': os.path.join(base_downloads, "daily"),
@@ -132,6 +123,26 @@ class Helper:
             if os.path.exists(old_path):
                 new_path = os.path.join(folder, new_name)
                 os.rename(old_path, new_path)
+
+        if month:
+            del folders["stats_week_names"]
+            stats_folder = os.path.join(base_downloads, "stats")
+
+            old = os.path.join(stats_folder, f"{self.env("stcv")}")
+            new = os.path.join(stats_folder, f"{self.env("sts")} (1).csv")
+
+            if os.path.exists(old):
+                os.rename(old, new)
+
+            for i in range(1, 33): 
+                old_name = f"{self.env("st")} ({i}).csv"
+                new_name = f"{self.env("sts")} ({i + 1}).csv"
+
+                old_path = os.path.join(stats_folder, old_name)
+                new_path = os.path.join(stats_folder, new_name)
+
+                if os.path.exists(old_path):
+                    os.rename(old_path, new_path)
 
         for env_key, folder_path in folders.items():
             file_map = ast.literal_eval(self.env(env_key) or "{}")
@@ -236,9 +247,6 @@ class Helper:
         while True:
             try:
                 self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                # popUp = driver.execute_script(f"return document.querySelector('{self.data(driver, 'table', 'pop-up')}') != null;')")
-                # if popUp:
-                print("Hello 1")
                 break
             except:
                 continue
@@ -247,12 +255,10 @@ class Helper:
         while True:
             try:
                 self.wait_element(driver, 'table', 'pop-up', timeout=5)
-                print("Hello 2")
                 break
             except:
                 try:
                     self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                    print("Hello 3")
                 except:
                     break
 
@@ -262,7 +268,6 @@ class Helper:
         while True:
             try:
                 self.search_element(driver, 'table', 'csv', click=True)
-                print("Hello 4")
                 break
             except:
                 continue

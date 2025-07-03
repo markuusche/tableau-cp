@@ -1,12 +1,10 @@
 import csv
-import os, getpass, shutil, re
+import os
 from pathlib import Path
 from time import sleep
 from pathlib import Path
-from zoneinfo import ZoneInfo  
 from src.utils.helper import Helper
 from src.api.sheet import GoogleSheet
-from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -31,7 +29,7 @@ class Tableau(Helper):
         self.wait_element(driver, 'table', 'data', timeout=30)
 
     # login user
-    def userLogin(self, driver, month):
+    def userLogin(self, driver):
         self.wait_element(driver, 'login', 'email')
         email = self.search_element(driver, 'login', 'email')
         email.send_keys(self.env('email'))
@@ -91,14 +89,11 @@ class Tableau(Helper):
             self.download(driver)
             sleep(2)
 
+        if info["weekday_index"] == 0:
+            inputDate(info["monday"], info["sunday"])
+
         if not monthly:
             self.moveFiles()
-        
-        week = info["weekday_index"] == 2
-
-        if week: # weekly
-            inputDate(info["monday"], info["sunday"])
-            self.moveFiles(week=week)
         
         if monthly:
             inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
@@ -106,7 +101,8 @@ class Tableau(Helper):
 
     # Full game report workbook
     def gameReport(self, driver, monthly=False):
-        self.userLogin(driver, monthly)
+        self.userLogin(driver)
+
         # dashboard
         categories = self.env('categories', True)
         for item in categories:
@@ -130,22 +126,19 @@ class Tableau(Helper):
                 setDate.send_keys(date)
                 self.download(driver)
 
-        week = info["weekday_index"] == 2
-
-        if week:
+        if info["weekday_index"] == 0:
             inputDate(info["full_week"])
 
-        if not monthly:
-            self.moveFiles(week=week)
+        self.moveFiles()
 
         if monthly:
             inputDate(info["last_month_dates"])
-            self.moveFiles(month=True)
+            self.moveFiles(monthly)
 
     def gameData(self, month=False):
 
         # renames files
-        # self.modifyFiles()
+        self.modifyFiles(month)
 
         # data fetch/filtering
         def dataList(mode, stats, theFiles):
@@ -213,7 +206,7 @@ class Tableau(Helper):
                         return result
                     
                     daily = trasnfromRows(temp)
-                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 2 and stats == "week_stats" else ""
+                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats == "week_stats" else ""
                     monthly = weekly = trasnfromRows(cleaned_temp)
 
                 # sts for stats, I aint got time to think variable names ;0
@@ -232,7 +225,7 @@ class Tableau(Helper):
                     temp = updated_temp
 
                 if not month:
-                    if info["weekday_index"] == 2 and stats == "week_stats":
+                    if info["weekday_index"] == 0 and stats == "week_stats":
                         if "Statistics (" in nameFilter:
                             weekly = temp
                             self.sheet.populateSheet(self.env("st_weekly"), f'A2', weekly)
@@ -243,14 +236,17 @@ class Tableau(Helper):
                 else:
                     if "Statistics (" in nameFilter:
                         weekly = temp
-                        self.sheet.populateSheet("Statistics (Monthly)", f'A2', weekly)
+                        self.sheet.populateSheet(f"{self.env("stsmn")}", f'A2', weekly)
                     else:
                         sheet_names = nameFilter + " (Monthly)"
                         self.sheet.populateSheet(sheet_names, f'A2', monthly)
 
-        mnonthly_files = self.monthly_files if month else self.weekly_stats_files
+        month_or_week = self.monthly_files if month else self.weekly_stats_files
         dataList("daily", "stats", self.files)
         dataList("weekly", "week_stats", self.week_files)
-        dataList("stats", "week_stats", mnonthly_files)
 
-        # self.clearFolders()
+        if month:
+            print("month_or_week: ", month_or_week)
+            dataList("stats", "week_stats", month_or_week)
+
+        self.clearFolders()
