@@ -143,6 +143,7 @@ class Tableau(Helper):
         # data fetch/filtering
         def dataList(mode, stats, theFiles):
             target = Path.home() / f"Downloads/{mode}"
+            info = self.getWeekInfo()
             for name in theFiles:
 
                 temp = []
@@ -186,8 +187,6 @@ class Tableau(Helper):
                         new_row[3] = date_range
                         del new_row[4]
                         cleaned_temp.append(new_row)
-
-                    info = self.getWeekInfo()
                 
                     def trasnfromRows(data):
                         result = []
@@ -232,7 +231,8 @@ class Tableau(Helper):
                         else:
                             self.sheet.populateSheet(nameFilter, f'A2', weekly)
                     else:
-                        self.sheet.populateSheet(nameFilter, f'A2', daily)
+                        if not self.sheet.getCellValue() == daily[0][0]:
+                            self.sheet.populateSheet(nameFilter, f'A2', daily)
                 else:
                     if "Statistics (" in nameFilter:
                         weekly = temp
