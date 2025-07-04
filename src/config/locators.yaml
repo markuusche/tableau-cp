@@ -12,7 +12,7 @@ otp:
   root:                                        "#root"
 
 dashboard:
-  logo:                                      "a[title='Bivision']"
+  logo:                                        "a[title='Bivision']"
 
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
@@ -30,8 +30,3 @@ table:
   date-2:                                      "#tabZoneId14 .QueryBox"
   date-s:                                      "textarea[class='QueryBox']"
   title:                                       "#tableauTabbedNavigation_tab_8"
-  game:         "#tabZoneId21 .CFContent .QueryBox"
-  glass:        "div#loadingGlassPane"
-
-
-x: "div[class='tab-clip'] > div:nth-child(6) img"
