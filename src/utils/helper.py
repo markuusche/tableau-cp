@@ -198,14 +198,13 @@ class Helper:
     def clearFolders(self):
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders = [os.path.join(downloads, "daily"), os.path.join(downloads, "weekly")]
+        folders_names = ["daily", "weekly", "stats"]
 
-        for folder in folders:
-            if os.path.exists(folder):
-                shutil.rmtree(folder)
-                print(f"Deleted folder: {folder}")
-            else:
-                print(f"Folder does not exist: {folder}")
+        for folder in folders_names:
+            folders = os.path.join(downloads, folder)
+            if os.path.exists(folders):
+                shutil.rmtree(folders)
+                print(f"Deleted folder: {folders}")
 
     # get weeks/day info
     def getWeekInfo(self):

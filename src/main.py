@@ -206,7 +206,7 @@ class Tableau(Helper):
                     
                     daily = trasnfromRows(temp)
                     weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats == "week_stats" else ""
-                    monthly = weekly = trasnfromRows(cleaned_temp)
+                    monthly = trasnfromRows(cleaned_temp)
 
                 # sts for stats, I aint got time to think variable names ;0
                 sts = envStats if stats == "stats" else envStats.replace("(Weekly)", "")
@@ -244,9 +244,7 @@ class Tableau(Helper):
         month_or_week = self.monthly_files if month else self.weekly_stats_files
         dataList("daily", "stats", self.files)
         dataList("weekly", "week_stats", self.week_files)
-
-        if month:
-            print("month_or_week: ", month_or_week)
-            dataList("stats", "week_stats", month_or_week)
+        dataList("stats", "week_stats", month_or_week)
 
         self.clearFolders()
+
