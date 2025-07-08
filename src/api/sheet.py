@@ -77,5 +77,6 @@ class GoogleSheet:
             spreadsheetId=helper.env('sheetId'),
             range=f'{helper.env("sts")}!A2'
             ).execute()
-        value = result.get('values', [])
-        return value[0][0]
+        if 'values' in result:
+            value = result.get('values', [])
+            return value[0][0]

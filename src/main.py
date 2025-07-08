@@ -147,6 +147,7 @@ class Tableau(Helper):
             for name in theFiles:
 
                 temp = []
+                monthly = []
 
                 file = target / name
 
@@ -223,6 +224,17 @@ class Tableau(Helper):
                     weekly = updated_temp
                     temp = updated_temp
 
+                # rename to oss ;00
+                def update_list_index(data):
+                    for index in data:
+                        if len(index) > 3 and index[3] == self.env("lv"):
+                            index[1] = self.env("oss")
+
+                update_list_index(temp)
+                update_list_index(daily)
+                update_list_index(weekly)
+                update_list_index(monthly)
+
                 if not month:
                     if info["weekday_index"] == 0 and stats == "week_stats":
                         if "Statistics (" in nameFilter:
@@ -231,7 +243,10 @@ class Tableau(Helper):
                         else:
                             self.sheet.populateSheet(nameFilter, f'A2', weekly)
                     else:
-                        if not self.sheet.getCellValue() == daily[0][0]:
+                        # for stats only purposes condition
+                        if nameFilter == self.env("sts") and not self.sheet.getCellValue() == daily[0][0]:
+                            self.sheet.populateSheet(nameFilter, f'A2', daily)
+                        else:
                             self.sheet.populateSheet(nameFilter, f'A2', daily)
                 else:
                     if "Statistics (" in nameFilter:
@@ -247,4 +262,3 @@ class Tableau(Helper):
         dataList("stats", "week_stats", month_or_week)
 
         self.clearFolders()
-
