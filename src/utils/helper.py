@@ -154,6 +154,14 @@ class Helper:
         value = value.replace("IP_", "").replace("IP", "").strip()
         value = re.sub(r'(FC)$', r' \1', value).strip()
 
+        vendor_suffixes = ["5G"]
+        for suffix in vendor_suffixes:
+            if value.endswith(suffix):
+                provider = value[:3]
+                game_name = value[3:-len(suffix)].strip()
+                vendor = suffix
+                return [provider, game_name, vendor]
+
         provider_mapping = {
             "CAS": self.env("CAS"),
             "GAM": self.env("GAM")
@@ -177,7 +185,7 @@ class Helper:
                 if split_match:
                     game_name, vendor = split_match.groups()
             
-            vendor_prefixes = ["XL", "X", "CAISHEN", "II", "WINS", "ILO", "DNT", "I"] # in case need to filter more
+            vendor_prefixes = ["XL", "X", "CAISHEN", "II", "WINS", "ILO", "DNT", "I", "Z"] # in case need to filter more
             for prefix in vendor_prefixes:
                 if vendor.startswith(prefix):
                     game_name = f"{game_name} {prefix}".strip()
