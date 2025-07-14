@@ -10,6 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementNotInteractableException
 
 class Tableau(Helper):
 
@@ -117,14 +118,17 @@ class Tableau(Helper):
 
         info = self.getWeekInfo()
         def inputDate(data):
-            self.wait_element(driver, 'table', 'data', timeout=180)
+            try:
+                self.wait_element(driver, 'table', 'data', timeout=180)
 
-            for date in data:
-                setDate = self.search_element(driver, 'table', 'date-s')
-                setDate.send_keys(Keys.COMMAND, 'a')
-                setDate.send_keys(Keys.BACKSPACE)
-                setDate.send_keys(date)
-                self.download(driver)
+                for date in data:
+                    setDate = self.search_element(driver, 'table', 'date-s')
+                    setDate.send_keys(Keys.COMMAND, 'a')
+                    setDate.send_keys(Keys.BACKSPACE)
+                    setDate.send_keys(date)
+                    self.download(driver)
+            except ElementNotInteractableException:
+                pass
 
         if info["weekday_index"] == 0:
             inputDate(info["full_week"])
