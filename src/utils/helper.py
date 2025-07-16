@@ -154,7 +154,7 @@ class Helper:
         value = value.replace("IP_", "").replace("IP", "").strip()
         value = re.sub(r'(FC)$', r' \1', value).strip()
 
-        vendor_suffixes = ["5G"]
+        vendor_suffixes = self.env('suffix', True)
         for suffix in vendor_suffixes:
             if value.endswith(suffix):
                 provider = value[:3]

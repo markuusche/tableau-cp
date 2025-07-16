@@ -248,8 +248,9 @@ class Tableau(Helper):
                             self.sheet.populateSheet(nameFilter, f'A2', weekly)
                     else:
                         # for stats only purposes condition
-                        if nameFilter == self.env("sts") and not self.sheet.getCellValue() == daily[0][0]:
-                            self.sheet.populateSheet(nameFilter, f'A2', daily)
+                        if nameFilter == self.env("sts"):
+                            if not self.sheet.getCellValue() == daily[0][0]:
+                                self.sheet.populateSheet(nameFilter, f'A2', daily)
                         else:
                             self.sheet.populateSheet(nameFilter, f'A2', daily)
                 else:
