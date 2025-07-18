@@ -10,23 +10,14 @@ class GoogleSheet:
         self.credentials = Credentials.from_service_account_file(self.sevice_account, scopes=self.scopes)
         self.service = build('sheets', 'v4', credentials=self.credentials)
         self.sheet = self.service.spreadsheets()
-    
-    def update_cells(self, sheetName, cell, values):
-        self.sheet.values().update(
-            spreadsheetId=helper.env('sheetId'),
-            range=f'{sheetName}!{cell}',
-            valueInputOption='USER_ENTERED', 
-            body={
-                'values': [values]
-            }
-        ).execute()
 
-    def populateSheet(self, sheetName, cell, values):
+    def populateSheet(self, sheetName, cell, values, event=False):
         creds = Credentials.from_service_account_file(helper.env('cds'))
         service = build('sheets', 'v4' , credentials=creds)
         range_name = f'{sheetName}!{cell}'
         
-        sheet_metadata = service.spreadsheets().get(spreadsheetId=helper.env('sheetId')).execute()
+        Id = helper.env('sheetId') if not event else helper.env('evtrckId')
+        sheet_metadata = service.spreadsheets().get(spreadsheetId=Id).execute()
         sheets = sheet_metadata.get('sheets', '')
 
         # get sheet Id
@@ -56,7 +47,7 @@ class GoogleSheet:
         }
    
         service.spreadsheets().batchUpdate(
-            spreadsheetId=helper.env('sheetId'),
+            spreadsheetId=Id,
             body=body
         ).execute()
 
@@ -66,16 +57,17 @@ class GoogleSheet:
         }
 
         service.spreadsheets().values().update(
-            spreadsheetId=helper.env('sheetId'),
+            spreadsheetId=Id,
             range=range_name,
             valueInputOption='RAW',
             body=body
         ).execute()
  
-    def getCellValue(self):
+    def getCellValue(self, event=False):
+        Id = helper.env('evtrckId') if event else helper.env('sheetId')
         result = self.sheet.values().get(
-            spreadsheetId=helper.env('sheetId'),
-            range=f'{helper.env("sts")}!A2'
+            spreadsheetId=Id,
+            range='Home!A2'
             ).execute()
         if 'values' in result:
             value = result.get('values', [])

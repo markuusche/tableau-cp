@@ -40,7 +40,7 @@ class Helper:
         return names
     
     # about files
-    def moveFiles(self, month=False):
+    def moveFiles(self, month=False, gameEvent=False, game=False):
 
         def get_clean_basename(filename):
             base, ext = os.path.splitext(filename)
@@ -62,42 +62,54 @@ class Helper:
         weekly_folder = os.path.join(downloads, "weekly")
         daily_folder = os.path.join(downloads, "daily")
         stats_folder = os.path.join(downloads, "stats")
+        games = os.path.join(downloads, "games")
 
         os.makedirs(weekly_folder, exist_ok=True)
         os.makedirs(daily_folder, exist_ok=True)
         os.makedirs(stats_folder, exist_ok=True)
+        os.makedirs(games, exist_ok=True)
 
         files = self.renameFiles('file_names')
         file_renames = files
+        
+        if not game:
+            for original_name in file_renames.keys():
+                source_path = os.path.join(downloads, original_name)
+                daily_target_path = os.path.join(daily_folder, original_name)
 
-        for original_name in file_renames.keys():
-            source_path = os.path.join(downloads, original_name)
-            daily_target_path = os.path.join(daily_folder, original_name)
-
-            if os.path.exists(source_path):
-                
-                if self.env("st") in original_name and os.path.exists(daily_target_path):
-                    continue
-
-                if self.env("dg1") in original_name:
-                    target_folder = weekly_folder
-                elif self.env("dg") in original_name or self.env("st") in original_name:
-                    if self.env("st") in original_name and month:
+                if os.path.exists(source_path):
+                    
+                    if self.env("st") in original_name and os.path.exists(daily_target_path):
                         continue
-                    target_folder = daily_folder
-                else:
-                    continue
 
-                destination = get_unique_path(target_folder, original_name)
-                shutil.move(source_path, destination)
-            else:
-                print(f"File not found: {original_name}")
+                    if self.env("dg1") in original_name:
+                        if gameEvent:
+                            target_folder = games
+                        else:
+                            target_folder = weekly_folder
+                    elif self.env("dg") in original_name or self.env("st") in original_name:
+                        if self.env("st") in original_name and month:
+                            continue
+                        target_folder = daily_folder
+                    else:
+                        continue
+
+                    destination = get_unique_path(target_folder, original_name)
+                    shutil.move(source_path, destination)
+                else:
+                    print(f"File not found: {original_name}")
         
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
             if os.path.isfile(filepath) and filename.startswith(self.env("st")):
-                destination = os.path.join(stats_folder, filename)
+                if gameEvent:
+                    destination = get_unique_path(daily_folder, filename)
+                elif game:
+                    destination = os.path.join(games, filename)
+                else:
+                    destination = os.path.join(stats_folder, filename)
+                    
                 shutil.move(filepath, destination)
 
         if month:
@@ -116,6 +128,7 @@ class Helper:
             'file_names': os.path.join(base_downloads, "daily"),
             'weekly_names': os.path.join(base_downloads, "weekly"),
             'stats_week_names': os.path.join(base_downloads, "stats"),
+            'games_week_names': os.path.join(base_downloads, "games"),
         }
 
         def rename(folder, old_name, new_name):
