@@ -265,11 +265,13 @@ class Tableau(Helper):
                 if not month:
                     if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter:
-                                weekly = temp
-                                self.sheet.populateSheet(self.env("st_weekly"), 'A2', weekly, event=True)
+                                data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                                self.sheet.populateSheet(self.env("st_weekly"), 'A2', data, event=True)
+                                break
                         elif "Games (" in nameFilter:
-                                temp = filter_rows(temp)
-                                self.sheet.populateSheet(self.env("sg_weekly"), 'A2', temp, event=True)
+                                data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                                self.sheet.populateSheet(self.env("sg_weekly"), 'A2', data, event=True)
+                                break
                         else:
                             self.sheet.populateSheet(nameFilter, 'A2', weekly)
                     else:
@@ -298,4 +300,5 @@ class Tableau(Helper):
         dataList("games", "game_stats", self.weekly_games_files)
         dataList("stats", "week_stats", month_or_week)
 
-        self.clearFolders()
+        # self.clearFolders()
+# 

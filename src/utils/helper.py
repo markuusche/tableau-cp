@@ -4,6 +4,8 @@ import os, ast
 import shutil
 import getpass
 import re
+import glob, os
+import pandas as pd
 from time import sleep
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
@@ -139,28 +141,77 @@ class Helper:
 
         if month:
             del folders["stats_week_names"]
-            stats_folder = os.path.join(base_downloads, "stats")
+            del folders["games_week_names"]
+            
+            keys = ["stats", "games"]
+            
+            for x in keys:
+                path = os.path.join(base_downloads, x)
 
-            old = os.path.join(stats_folder, f"{self.env("stcv")}")
-            new = os.path.join(stats_folder, f"{self.env("sts")} (1).csv")
+                old = os.path.join(path, f"{self.env("stcv")}")
+                name = "sts" if x == "stats" else "stsg"
+                new = os.path.join(path, f"{self.env(name)} (1).csv")
 
-            if os.path.exists(old):
-                os.rename(old, new)
+                if os.path.exists(old):
+                    os.rename(old, new)
 
-            for i in range(1, 33): 
-                old_name = f"{self.env("st")} ({i}).csv"
-                new_name = f"{self.env("sts")} ({i + 1}).csv"
+                for i in range(1, 33):
+                    old_name = f"{self.env("st")} ({i}).csv"
+                    new_name = f"{self.env(name)} ({i + 1}).csv"
 
-                old_path = os.path.join(stats_folder, old_name)
-                new_path = os.path.join(stats_folder, new_name)
+                    old_path = os.path.join(path, old_name)
+                    new_path = os.path.join(path, new_name)
 
-                if os.path.exists(old_path):
-                    os.rename(old_path, new_path)
-
+                    if os.path.exists(old_path):
+                        os.rename(old_path, new_path)
+        
         for env_key, folder_path in folders.items():
             file_map = ast.literal_eval(self.env(env_key) or "{}")
             for old, new in file_map.items():
                 rename(folder_path, old, new)
+    
+    def sumEvent(self, folder: str, date: str):
+        all_game_names = set()
+        base_downloads = os.path.expanduser("~/Downloads")
+        folderPath = os.path.join(base_downloads, folder)
+        csv_files = glob.glob(os.path.join(folderPath, "*.csv"))
+
+        for file in csv_files:
+            with open(file, encoding="utf-16") as f:
+                lines = f.readlines()
+            for line in lines[1:]: 
+                parts = line.strip().split("\t")
+                if len(parts) >= 3:
+                    all_game_names.add(parts[2])
+
+        total_sums = {game: [0, 0] for game in all_game_names}
+
+        for file in csv_files:
+            df = pd.read_csv(file, encoding="utf-16", sep="\t", header=None, engine="python")
+            for _, row in df.iterrows():
+                game = str(row[2]).strip()
+                if game in total_sums:
+                    try:
+                        val1 = float(str(row[3]).replace(",", ""))
+                        val2 = float(str(row[4]).replace(",", ""))
+                        total_sums[game][0] += val1
+                        total_sums[game][1] += val2
+                    except (ValueError, IndexError):
+                        continue
+        c = []
+        sorted_totals = sorted(total_sums.items(), key=lambda item: item[1][0] + item[1][1], reverse=True)
+
+        for game, (sum1, sum2) in sorted_totals:
+            w = [game, sum1, sum2]
+            c.append(w)
+            
+        for i, item in enumerate(c):
+            if i == 0:
+                c[i].insert(0, date)
+            else:
+                c[i].insert(0, "")
+            
+        return c
 
      # filters items from the list
     def filterList(self, value):
