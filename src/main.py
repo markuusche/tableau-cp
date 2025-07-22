@@ -265,24 +265,25 @@ class Tableau(Helper):
                 if not month:
                     if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter:
-                                data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
-                                self.sheet.populateSheet(self.env("st_weekly"), 'A2', data, event=True)
-                                break
+                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                            self.sheet.populateSheet(self.env("st_weekly"), 'A2', data, event=True)
+                            break
                         elif "Games (" in nameFilter:
-                                data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
-                                self.sheet.populateSheet(self.env("sg_weekly"), 'A2', data, event=True)
-                                break
+                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                            self.sheet.populateSheet(self.env("sg_weekly"), 'A2', data, event=True)
+                            break
                         else:
                             self.sheet.populateSheet(nameFilter, 'A2', weekly)
                     else:
                         # for stats only purposes condition
-                        cell = self.sheet.getCellValue(event=True) != daily[0][0]
                         if nameFilter == self.env("sts"):
+                            cell = self.sheet.getCellValue(range=nameFilter, event=True) != daily[0][0]
                             if cell:
                                 self.sheet.populateSheet(nameFilter, 'A2', daily, event=True)
                         elif nameFilter == self.env("stsg"):
+                            temp = filter_rows(temp)
+                            cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
                             if cell:
-                                temp = filter_rows(temp)
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                         else:
                             self.sheet.populateSheet(nameFilter, 'A2', daily)
@@ -300,5 +301,4 @@ class Tableau(Helper):
         dataList("games", "game_stats", self.weekly_games_files)
         dataList("stats", "week_stats", month_or_week)
 
-        # self.clearFolders()
-# 
+        self.clearFolders()

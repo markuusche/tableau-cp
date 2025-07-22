@@ -1,23 +1,27 @@
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 from src.utils.helper import Helper
+import httplib2, google_auth_httplib2
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from google.oauth2.service_account import Credentials
 helper = Helper()
 
 class GoogleSheet:
     def __init__(self):
-        self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
+        self.scopes = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ]
         self.sevice_account = helper.env("cds")
-        self.credentials = Credentials.from_service_account_file(self.sevice_account, scopes=self.scopes)
-        self.service = build('sheets', 'v4', credentials=self.credentials)
+        self.credentials = service_account.Credentials.from_service_account_file(self.sevice_account, scopes=self.scopes)
+        self.http = httplib2.Http(timeout=180)
+        self.auth = google_auth_httplib2.AuthorizedHttp(self.credentials, http=self.http)
+        self.service = build('sheets', 'v4', http=self.auth)
         self.sheet = self.service.spreadsheets()
 
     def populateSheet(self, sheetName, cell, values, event=False):
-        creds = Credentials.from_service_account_file(helper.env('cds'))
-        service = build('sheets', 'v4' , credentials=creds)
         range_name = f'{sheetName}!{cell}'
-        
         Id = helper.env('sheetId') if not event else helper.env('evtrckId')
-        sheet_metadata = service.spreadsheets().get(spreadsheetId=Id).execute()
+        sheet_metadata = self.sheet.get(spreadsheetId=Id).execute()
         sheets = sheet_metadata.get('sheets', '')
 
         # get sheet Id
@@ -42,32 +46,23 @@ class GoogleSheet:
             }
         ]
 
-        body = {
-            'requests': requests
-        }
-   
-        service.spreadsheets().batchUpdate(
+        self.sheet.batchUpdate(
             spreadsheetId=Id,
-            body=body
+            body={"requests": requests}
         ).execute()
 
-
-        body = {
-            "values": values
-        }
-
-        service.spreadsheets().values().update(
+        self.sheet.values().update(
             spreadsheetId=Id,
             range=range_name,
             valueInputOption='RAW',
-            body=body
+            body={"values": values}
         ).execute()
  
-    def getCellValue(self, event=False):
+    def getCellValue(self, range, event=False):
         Id = helper.env('evtrckId') if event else helper.env('sheetId')
         result = self.sheet.values().get(
             spreadsheetId=Id,
-            range='Home!A2'
+            range=f'{range}!A2'
             ).execute()
         if 'values' in result:
             value = result.get('values', [])
