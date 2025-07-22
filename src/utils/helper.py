@@ -170,7 +170,7 @@ class Helper:
             for old, new in file_map.items():
                 rename(folder_path, old, new)
     
-    def sumEvent(self, folder: str, date: str):
+    def sumEvent(self, folder: str, date: str, name: str):
         all_game_names = set()
         base_downloads = os.path.expanduser("~/Downloads")
         folderPath = os.path.join(base_downloads, folder)
@@ -207,9 +207,12 @@ class Helper:
             
         for i, item in enumerate(c):
             if i == 0:
+                category_name = name.replace('1', '').replace('()', '')
                 c[i].insert(0, date)
+                c[i].insert(1, category_name)
             else:
                 c[i].insert(0, "")
+                c[i].insert(1, "")
             
         return c
 

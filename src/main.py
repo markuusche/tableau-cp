@@ -263,13 +263,13 @@ class Tableau(Helper):
                 update_list_index(monthly)
 
                 if not month:
-                    if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
+                    if info["weekday_index"] == 1 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter:
-                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}", nameFilter)
                             self.sheet.populateSheet(self.env("st_weekly"), 'A2', data, event=True)
                             break
                         elif "Games (" in nameFilter:
-                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}")
+                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}", nameFilter)
                             self.sheet.populateSheet(self.env("sg_weekly"), 'A2', data, event=True)
                             break
                         else:
