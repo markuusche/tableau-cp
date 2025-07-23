@@ -32,6 +32,7 @@ class Tableau(Helper):
 
     # login user
     def userLogin(self, driver):
+        driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'login', 'email')
         email = self.search_element(driver, 'login', 'email')
         email.send_keys(self.env('email'))
@@ -288,9 +289,11 @@ class Tableau(Helper):
                         else:
                             self.sheet.populateSheet(nameFilter, 'A2', daily)
                 else:
+                    # temporary not needed
                     if "Home (" in nameFilter:
-                        weekly = temp
-                        self.sheet.populateSheet(f"{self.env("stsmn")}", 'A2', weekly)
+                        # weekly = temp
+                        # self.sheet.populateSheet(f"{self.env("stsmn")}", 'A2', weekly)
+                        continue
                     else:
                         sheet_names = nameFilter + " (Monthly)"
                         self.sheet.populateSheet(sheet_names, 'A2', monthly)
