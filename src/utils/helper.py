@@ -204,15 +204,11 @@ class Helper:
         for game, (sum1, sum2) in sorted_totals:
             w = [game, sum1, sum2]
             c.append(w)
-            
-        for i, item in enumerate(c):
-            if i == 0:
-                category_name = name.replace('1', '').replace('()', '')
-                c[i].insert(0, date)
-                c[i].insert(1, category_name)
-            else:
-                c[i].insert(0, "")
-                c[i].insert(1, "")
+        
+        for r in c:
+            category_name = name.replace('1', '').replace('()', '')
+            r.insert(0, date)
+            r.insert(1, category_name)
             
         return c
 

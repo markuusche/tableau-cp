@@ -229,29 +229,7 @@ class Tableau(Helper):
                     daily = trasnfromRows(temp)
                     weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"} else ""
                     monthly = trasnfromRows(cleaned_temp)
-
-                def filter_rows(temp: list[list]) -> list[list]:
-                    updated_temp = []
-                    for i, row in enumerate(temp):
-                        new_row = row.copy()
-                        if i != 0 and new_row:
-                            new_row[0] = ""
-                        updated_temp.append(new_row)
-                    return updated_temp
-
-                # sts for stats, I aint got time to think variable names ;0
-                if stats == "stats":
-                    sts = envStats
-                elif nameFilter == self.env("stsg"):
-                    sts = self.env("stsg")
-                else:
-                    sts = envStats.replace("(Weekly)", "")
                     
-                if sts in nameFilter:
-                    daily = filter_rows(temp)
-                    weekly =  filter_rows(temp)
-                    temp =  filter_rows(temp)
-
                 # rename to oss ;00
                 def update_list_index(data):
                     for index in data:
@@ -264,25 +242,17 @@ class Tableau(Helper):
                 update_list_index(monthly)
 
                 if not month:
-                    if info["weekday_index"] == 1 and stats in {"week_stats", "game_stats"}:
-                        if "Home (" in nameFilter:
+                    if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
+                        if "Home (" in nameFilter or "Games (" in nameFilter:
                             data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}", nameFilter)
-                            self.sheet.populateSheet(self.env("st_weekly"), 'A2', data, event=True)
-                            break
-                        elif "Games (" in nameFilter:
-                            data = self.sumEvent(mode, f"{info["monday"]} - {info["sunday"]}", nameFilter)
-                            self.sheet.populateSheet(self.env("sg_weekly"), 'A2', data, event=True)
+                            env = self.env("st_weekly") if "Home (" in nameFilter else self.env("sg_weekly")
+                            self.sheet.populateSheet(env, 'A2', data, event=True)
                             break
                         else:
                             self.sheet.populateSheet(nameFilter, 'A2', weekly)
                     else:
                         # for stats only purposes condition
-                        if nameFilter == self.env("sts"):
-                            cell = self.sheet.getCellValue(range=nameFilter, event=True) != daily[0][0]
-                            if cell:
-                                self.sheet.populateSheet(nameFilter, 'A2', daily, event=True)
-                        elif nameFilter == self.env("stsg"):
-                            temp = filter_rows(temp)
+                        if nameFilter == self.env("sts") or nameFilter == self.env("stsg"):
                             cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
                             if cell:
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
