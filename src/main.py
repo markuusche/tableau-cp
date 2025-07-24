@@ -22,13 +22,6 @@ class Tableau(Helper):
         self.weekly_stats_files = self.env('weekly_stats_files', True)
         self.weekly_games_files = self.env('weekly_games_files', True)
         self.downloads = os.path.expanduser("~/Downloads")
-    
-    def _iframe(self, driver):
-        iframe = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
-        )
-        driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=180)
 
     # login user
     def userLogin(self, driver):

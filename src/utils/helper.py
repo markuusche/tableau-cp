@@ -7,6 +7,7 @@ import re
 import glob, os
 import pandas as pd
 from time import sleep
+from natsort import natsorted
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
@@ -222,10 +223,17 @@ class Helper:
         base = os.path.expanduser("~/Downloads")
         path = os.path.join(base, 'pages')
         files = glob.glob(os.path.join(path, "*.csv"))
+        
+        def order(filename):
+            match = re.search(r"\((\d+)\)", filename)
+            return int(match.group(1)) if match else -1
+        
+        sorted_files = sorted(files, key=order, reverse=True)
 
         a = []
         b = []
-        for p in files:
+        
+        for p in sorted_files:
             k = [[], [], [], [], [], []]
             with open(p, encoding="utf-16") as f:
                 lines = f.readlines()
@@ -258,8 +266,8 @@ class Helper:
                 else:
                     k[5].append(x)
         
-            a = k[4]
-            b = k[5]
+            a.extend(k[4])
+            b.extend(k[5])
         
         return a, b
 
@@ -398,10 +406,14 @@ class Helper:
         sleep(2)
         
     def singlePage(self, driver, data):
+        self._iframe(driver)
         try:
-            self._iframe(driver)
-            self.wait_element(driver, 'table', 'data', timeout=180)
-
+            
+            try:
+                self.wait_element(driver, 'table', 'data', timeout=180)
+            except:
+                pass
+            
             for date in data:
                 setDate = self.search_element(driver, 'table', 'date-s')
                 setDate.send_keys(Keys.COMMAND, 'a')
@@ -410,6 +422,13 @@ class Helper:
                 self.download(driver)
         except ElementNotInteractableException:
             pass
+        
+    def _iframe(self, driver):
+        iframe = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+        )
+        driver.switch_to.frame(iframe)
+        self.wait_element(driver, 'table', 'data', timeout=180)
 
     # authentication keys for game providers
     def getOTP(self):
