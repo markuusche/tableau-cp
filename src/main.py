@@ -128,25 +128,11 @@ class Tableau(Helper):
             self.moveFiles(gameEvent=True)
 
         info = self.getWeekInfo()
-        def inputDate(data):
-            try:
-                self._iframe(driver)
-                self.wait_element(driver, 'table', 'data', timeout=180)
-
-                for date in data:
-                    setDate = self.search_element(driver, 'table', 'date-s')
-                    setDate.send_keys(Keys.COMMAND, 'a')
-                    setDate.send_keys(Keys.BACKSPACE)
-                    setDate.send_keys(date)
-                    self.download(driver)
-            except ElementNotInteractableException:
-                pass
-        
         if info["weekday_index"] == 0:
             categories = self.env('tracking', True)
             for i, item in enumerate(categories):
                 driver.get(self.env('event') + f"页面={item}")
-                inputDate(info["full_week"])
+                self.singlePage(driver, info["full_week"])
                 if i != 1:
                     self.moveFiles()
                 else:
@@ -155,7 +141,7 @@ class Tableau(Helper):
         self.moveFiles()
 
         if monthly:
-            inputDate(info["last_month_dates"])
+            self.singlePage(driver, (info["last_month_dates"]))
             self.moveFiles(monthly)
 
     def gameData(self, month=False):
@@ -275,3 +261,16 @@ class Tableau(Helper):
         dataList("stats", "week_stats", month_or_week)
 
         self.clearFolders()
+    
+    def homePage(self, driver):
+        self.userLogin(driver)
+        driver.get(self.env("classification"))
+        self._iframe(driver)
+        self.download(driver)
+        self.moveFiles(page=True)
+        a, b = self.pageData()
+        self.sheet.populateSheet(self.env("pop"), 'A2', a, event=True)
+        self.sheet.populateSheet(self.env("cats"), 'A2', b, event=True)
+        self.clearFolders()
+
+        

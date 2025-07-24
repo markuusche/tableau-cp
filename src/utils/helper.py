@@ -10,8 +10,10 @@ from time import sleep
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementNotInteractableException
 
 class Helper:
 
@@ -42,7 +44,7 @@ class Helper:
         return names
     
     # about files
-    def moveFiles(self, month=False, gameEvent=False, game=False):
+    def moveFiles(self, month=False, gameEvent=False, game=False, page=False):
 
         def get_clean_basename(filename):
             base, ext = os.path.splitext(filename)
@@ -65,11 +67,13 @@ class Helper:
         daily_folder = os.path.join(downloads, "daily")
         stats_folder = os.path.join(downloads, "stats")
         games = os.path.join(downloads, "games")
+        pages = os.path.join(downloads, "pages")
 
         os.makedirs(weekly_folder, exist_ok=True)
         os.makedirs(daily_folder, exist_ok=True)
         os.makedirs(stats_folder, exist_ok=True)
         os.makedirs(games, exist_ok=True)
+        os.makedirs(pages, exist_ok=True)
 
         files = self.renameFiles('file_names')
         file_renames = files
@@ -104,11 +108,13 @@ class Helper:
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith(self.env("st")):
+            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"))):
                 if gameEvent:
                     destination = get_unique_path(daily_folder, filename)
                 elif game:
                     destination = os.path.join(games, filename)
+                elif page:
+                    destination = os.path.join(pages, filename)
                 else:
                     destination = os.path.join(stats_folder, filename)
                     
@@ -212,6 +218,51 @@ class Helper:
             
         return c
 
+    def pageData(self):
+        base = os.path.expanduser("~/Downloads")
+        path = os.path.join(base, 'pages')
+        files = glob.glob(os.path.join(path, "*.csv"))
+
+        a = []
+        b = []
+        for p in files:
+            k = [[], [], [], [], [], []]
+            with open(p, encoding="utf-16") as f:
+                lines = f.readlines()
+            
+            for line in lines[1:]: 
+                row = line.strip().split("\t")
+                if row[1] in self.env("homepage", True):
+                    k[0].append(row)
+                elif row[1] == self.env("lvsl"):
+                    k[1].append(row)
+                else:
+                    k[2].append(row)
+
+            k[2].extend(k[1])
+            
+            g = [[], []]
+            
+            for x in k[0]:
+                if x[1] == self.env("rgs"):
+                    g[0].append(x)
+                else:
+                    g[1].append(x)
+            
+            k[2].extend(g[1])
+            k[2].extend(g[0])
+            
+            for x in k[2]:
+                if x[1] == self.env("pgs"):
+                    k[4].append(x)
+                else:
+                    k[5].append(x)
+        
+            a = k[4]
+            b = k[5]
+        
+        return a, b
+
      # filters items from the list
     def filterList(self, value):
         value = value.replace("IP_", "").replace("IP", "").strip()
@@ -269,7 +320,7 @@ class Helper:
     def clearFolders(self):
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)
@@ -345,6 +396,20 @@ class Helper:
         self.search_element(driver, 'table', 'btn', click=True)
         self.wait_element_invisibility(driver, 'table', 'pop-up')
         sleep(2)
+        
+    def singlePage(self, driver, data):
+        try:
+            self._iframe(driver)
+            self.wait_element(driver, 'table', 'data', timeout=180)
+
+            for date in data:
+                setDate = self.search_element(driver, 'table', 'date-s')
+                setDate.send_keys(Keys.COMMAND, 'a')
+                setDate.send_keys(Keys.BACKSPACE)
+                setDate.send_keys(date)
+                self.download(driver)
+        except ElementNotInteractableException:
+            pass
 
     # authentication keys for game providers
     def getOTP(self):
