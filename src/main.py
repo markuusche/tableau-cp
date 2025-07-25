@@ -128,10 +128,6 @@ class Tableau(Helper):
 
         self.moveFiles()
 
-        if monthly:
-            self.singlePage(driver, (info["last_month_dates"]))
-            self.moveFiles(monthly)
-
     def gameData(self, month=False):
 
         # renames files
