@@ -1,16 +1,11 @@
 import csv
 import os
-from pathlib import Path
 from time import sleep
 from pathlib import Path
 from src.utils.helper import Helper
 from src.api.sheet import GoogleSheet
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import ElementNotInteractableException
 
 class Tableau(Helper):
 
@@ -262,8 +257,8 @@ class Tableau(Helper):
         self.download(driver)
         self.moveFiles(page=True)
         a, b = self.pageData()
-        self.sheet.populateSheet(self.env("pop"), 'A2', a, event=True)
-        self.sheet.populateSheet(self.env("cats"), 'A2', b, event=True)
+        check = self.sheet.getCellValue(self.env("pop"), event=True) != a[0][0]
+        if check:
+            self.sheet.populateSheet(self.env("pop"), 'A2', a, event=True)
+            self.sheet.populateSheet(self.env("cats"), 'A2', b, event=True)
         self.clearFolders()
-
-        
