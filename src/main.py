@@ -94,37 +94,39 @@ class Tableau(Helper):
             self.moveFiles()
 
     # Full game report workbook
-    def gameReport(self, driver, monthly=False):
+    def gameReport(self, driver, monthly=False, page=False):
         self.userLogin(driver)
 
         # dashboard
-        categories = self.env('categories', True)
-        for item in categories:
-            driver.get(self.env('tableau') + f"Category={item}")
-            self.navigate(driver, monthly)
+        if not page:
+            categories = self.env('categories', True)
+            for item in categories:
+                driver.get(self.env('tableau') + f"Category={item}")
+                self.navigate(driver, monthly)
         
-        driver.get(self.env('statistics'))
-        self._iframe(driver)
-
-        if not monthly:
-            self.download(driver)
-            
-            # another data to separate
-            driver.get(self.env("event") + self.env("games"))
+        if page:
+            driver.get(self.env('statistics'))
             self._iframe(driver)
-            self.download(driver)
-            self.moveFiles(gameEvent=True)
 
-        info = self.getWeekInfo()
-        if info["weekday_index"] == 0:
-            categories = self.env('tracking', True)
-            for i, item in enumerate(categories):
-                driver.get(self.env('event') + f"页面={item}")
-                self.singlePage(driver, info["full_week"])
-                if i != 1:
-                    self.moveFiles()
-                else:
-                    self.moveFiles(game=True)
+            if not monthly:
+                self.download(driver)
+                
+                # another data to separate
+                driver.get(self.env("event") + self.env("games"))
+                self._iframe(driver)
+                self.download(driver)
+                self.moveFiles(gameEvent=True)
+
+            info = self.getWeekInfo()
+            if info["weekday_index"] == 0:
+                categories = self.env('tracking', True)
+                for i, item in enumerate(categories):
+                    driver.get(self.env('event') + f"页面={item}")
+                    self.singlePage(driver, info["full_week"])
+                    if i != 1:
+                        self.moveFiles()
+                    else:
+                        self.moveFiles(game=True)
 
         self.moveFiles()
 
@@ -257,4 +259,5 @@ class Tableau(Helper):
         if check:
             self.sheet.populateSheet(self.env("pop"), 'A2', a, event=True)
             self.sheet.populateSheet(self.env("cats"), 'A2', b, event=True)
+
         self.clearFolders()
