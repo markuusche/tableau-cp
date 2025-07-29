@@ -229,7 +229,9 @@ class Tableau(Helper):
                             if cell:
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                         else:
-                            self.sheet.populateSheet(nameFilter, 'A2', daily)
+                            cell = self.sheet.getCellValue(nameFilter) != daily[0][0]
+                            if cell:
+                                self.sheet.populateSheet(nameFilter, 'A2', daily)
                 else:
                     # temporary not needed
                     if "Home (" in nameFilter:
