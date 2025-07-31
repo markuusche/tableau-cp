@@ -30,3 +30,4 @@ table:
   date-2:                                      "#tabZoneId14 .QueryBox"
   date-s:                                      "textarea[class='QueryBox']"
   title:                                       "#tableauTabbedNavigation_tab_8"
+  table data:                                  "div.tab-tvYLabel img"

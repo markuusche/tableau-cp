@@ -57,23 +57,20 @@ class Tableau(Helper):
                 sendOTP()
                 continue
     
-    def navigate(self, driver, monthly=False):
+    def navigate(self, driver, monthly=False, iframe=False):
         # data table page
-        self._iframe(driver)
-
-        if not monthly:
-            self.download(driver)
-    
-        self.wait_element(driver, 'table', 'date-1')
-
-        # send date info to date text field
+        if not iframe:
+            self._iframe(driver)
+        
+         # send date info to date text field
         info = self.getWeekInfo()
         def inputDate(dateOne, dateTwo):
             dates = {
                     'date-1': dateOne,
                     'date-2': dateTwo
                     }
-
+            
+            self.wait_element(driver, 'table', 'date-1', timeout=120)
             for key, val in dates.items():
                 setDate = self.search_element(driver, 'table', key)
                 setDate.send_keys(Keys.COMMAND, 'a')
@@ -82,6 +79,12 @@ class Tableau(Helper):
 
             self.download(driver)
             sleep(2)
+
+        if not monthly:
+            # self.download(driver) 
+            inputDate(info["sunday"], info["sunday"])
+    
+        self.wait_element(driver, 'table', 'date-1')
 
         if info["weekday_index"] == 0:
             inputDate(info["monday"], info["sunday"])
@@ -96,14 +99,36 @@ class Tableau(Helper):
     # Full game report workbook
     def gameReport(self, driver, monthly=False, page=False):
         self.userLogin(driver)
-
+        import pyautogui
         # dashboard
         if not page:
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
-                self.navigate(driver, monthly)
-        
+                if item == '':
+                    self._iframe(driver)
+                    self.wait_element(driver, 'table', 'table data')
+                    table = self.search_element(driver, 'table', 'table data')
+                    initial = table.get_attribute('data-datasrc')
+                    pyautogui.moveTo(1426, 426)
+                    pyautogui.click()
+                    
+                    while True:
+                        try:
+                            table = self.search_element(driver, 'table', 'table data')
+                            current = table.get_attribute('data-datasrc')
+                        except:
+                            continue
+                        
+                        if initial == current:
+                            continue
+                        else:
+                            break
+
+                    self.navigate(driver, monthly=monthly, iframe=True)
+                else:
+                    self.navigate(driver, monthly=monthly)
+
         if page:
             driver.get(self.env('statistics'))
             self._iframe(driver)
@@ -248,7 +273,7 @@ class Tableau(Helper):
         dataList("games", "game_stats", self.weekly_games_files)
         dataList("stats", "week_stats", month_or_week)
 
-        self.clearFolders()
+        # self.clearFolders()
     
     def homePage(self, driver):
         self.userLogin(driver)
