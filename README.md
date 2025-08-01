@@ -14,9 +14,13 @@ Project Dependencies
 ---------------------
 
 - `python`
-- `selenium`
+- `pandas`
 - `pytest`
+- `pyotp`
+- `selenium`
 - `pyyaml`
+- `natsort`
+- `pyautogui`
 - `google-auth`
 - `google-auth-oauthlib`
 - `google-auth-httplib2`

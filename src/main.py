@@ -1,5 +1,6 @@
 import csv
 import os
+import pyautogui
 from time import sleep
 from pathlib import Path
 from src.utils.helper import Helper
@@ -81,8 +82,7 @@ class Tableau(Helper):
             sleep(2)
 
         if not monthly:
-            # self.download(driver) 
-            inputDate(info["sunday"], info["sunday"])
+            self.download(driver) 
     
         self.wait_element(driver, 'table', 'date-1')
 
@@ -99,7 +99,7 @@ class Tableau(Helper):
     # Full game report workbook
     def gameReport(self, driver, monthly=False, page=False):
         self.userLogin(driver)
-        import pyautogui
+
         # dashboard
         if not page:
             categories = self.env('categories', True)
@@ -232,6 +232,9 @@ class Tableau(Helper):
                     for index in data:
                         if len(index) > 3 and index[3] == self.env("lv"):
                             index[1] = self.env("oss")
+                        
+                        if index[2] == self.env("gname"):
+                            index[3] = self.env("ps")
 
                 update_list_index(temp)
                 update_list_index(daily)
@@ -273,7 +276,7 @@ class Tableau(Helper):
         dataList("games", "game_stats", self.weekly_games_files)
         dataList("stats", "week_stats", month_or_week)
 
-        # self.clearFolders()
+        self.clearFolders()
     
     def homePage(self, driver):
         self.userLogin(driver)
