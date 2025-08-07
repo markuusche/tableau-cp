@@ -59,11 +59,7 @@ class Tableau(Helper):
                 continue
     
     def navigate(self, driver, monthly=False, iframe=False):
-        # data table page
-        if not iframe:
-            self._iframe(driver)
-        
-         # send date info to date text field
+        # send date info to date text field
         info = self.getWeekInfo()
         def inputDate(dateOne, dateTwo):
             dates = {
@@ -80,6 +76,10 @@ class Tableau(Helper):
 
             self.download(driver)
             sleep(2)
+
+        # data table page
+        if not iframe:
+            self._iframe(driver)
 
         if not monthly:
             self.download(driver) 
