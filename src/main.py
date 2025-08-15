@@ -185,62 +185,16 @@ class Tableau(Helper):
 
                         if i < skip:
                             continue
+                        
                         if not row:
                             continue
 
-                        new_cols = self.filterList(row[0])
-                        remaining_cols = row[1:]
-                        row = new_cols + remaining_cols
-                        temp.append(row)
-
-                if nameFilter != envStats or nameFilter != self.env("stsg"):
-                    cleaned_temp = []
-
-                    for row in temp:
-                        if len(row) > 4:
-                            date_range = f"{row[3]} - {row[4]}"
-                        else:
-                            date_range = row[3] if len(row) > 3 else ""
-
-                        new_row = row.copy()
-                        new_row[3] = date_range
-                        del new_row[4]
-                        cleaned_temp.append(new_row)
-
-                    def trasnfromRows(data):
-                        result = []
-                        if not month:
-                            removeIndex = {4, 5, 6, 7} if stats == "stats" else {4, 5, 6}
-                        else:
-                            removeIndex = {4, 5, 6}
-
-                        for row in data:
-                            moveIndex = row[3] if len(row) > 3 else None
-                            filterRow = [val for idx, val in enumerate(row) if idx not in removeIndex and idx != 3]
-                            if moveIndex is not None:
-                                filterRow.insert(0, moveIndex)
-                            result.append(filterRow)
-                        
-                        return result
-                    
-                    daily = trasnfromRows(temp)
-                    weekly = trasnfromRows(cleaned_temp) if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"} else ""
-                    monthly = trasnfromRows(cleaned_temp)
-                    
-                # rename to oss ;00
-                def update_list_index(data):
-                    for index in data:
-                        if len(index) > 3 and index[3] == self.env("lv"):
-                            index[1] = self.env("oss")
-                        
-                        if index[2] == self.env("gname"):
-                            index[3] = self.env("ps")
-
-                update_list_index(temp)
-                update_list_index(daily)
-                update_list_index(weekly)
-                update_list_index(monthly)
-
+                        temp.append(row[skip:])
+                
+                def insertDates(temp, data, data2):
+                    for date in temp:
+                        date[0] = f"{data} - {data2}"
+                
                 if not month:
                     if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter or "Games (" in nameFilter:
@@ -249,26 +203,25 @@ class Tableau(Helper):
                             self.sheet.populateSheet(env, 'A2', data, event=True)
                             break
                         else:
-                            self.sheet.populateSheet(nameFilter, 'A2', weekly)
+                            insertDates(temp, info["monday"], info["sunday"])
+                            self.sheet.populateSheet(nameFilter, 'A2', temp)
                     else:
                         # for stats only purposes condition
                         if nameFilter == self.env("sts") or nameFilter == self.env("stsg"):
                             cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
                             if cell:
+                                for row in temp:
+                                    row.insert(0, f"{info["sunday"]}")
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                         else:
-                            cell = self.sheet.getCellValue(nameFilter) != daily[0][0]
+                            cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                             if cell:
-                                self.sheet.populateSheet(nameFilter, 'A2', daily)
+                                self.sheet.populateSheet(nameFilter, 'A2', temp)
                 else:
-                    # temporary not needed
-                    if "Home (" in nameFilter:
-                        # weekly = temp
-                        # self.sheet.populateSheet(f"{self.env("stsmn")}", 'A2', weekly)
-                        continue
-                    else:
-                        sheet_names = nameFilter + " (Monthly)"
-                        self.sheet.populateSheet(sheet_names, 'A2', monthly)
+                    sheet_names = nameFilter + " (Monthly)"
+                    dates = info["last_month_dates"]
+                    insertDates(temp, min(dates), max(dates))
+                    self.sheet.populateSheet(sheet_names, 'A2', temp)
 
         month_or_week = self.monthly_files if month else self.weekly_stats_files
         dataList("daily", "stats", self.files)

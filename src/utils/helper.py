@@ -271,59 +271,6 @@ class Helper:
         
         return a, b
 
-     # filters items from the list
-    def filterList(self, value):
-        value = value.replace("IP_", "").replace("IP", "").strip()
-        value = re.sub(r'(FC)$', r' \1', value).strip()
-
-        vendor_suffixes = self.env('suffix', True)
-        for suffix in vendor_suffixes:
-            if value.endswith(suffix):
-                provider = value[:3]
-                game_name = value[3:-len(suffix)].strip()
-                vendor = suffix
-                return [provider, game_name, vendor]
-
-        provider_mapping = {
-            "CAS": self.env("CAS"),
-            "GAM": self.env("GAM")
-        }
-
-        match = re.match(r"^([A-Z]{2,3})(.*?)([A-Z]{2,})$", value)
-        if match:
-            raw_provider, game_name, vendor = match.groups()
-            provider = provider_mapping.get(raw_provider, raw_provider)
-
-            game_name = game_name.replace("INO GAME", "").strip()
-            if game_name.endswith(self.env("EV")):
-                game_name = game_name[:-len(self.env("EV"))].strip()
-                vendor = f"{self.env("EVE")} {vendor}"
-            
-            for unwanted in ["INO GAME", "E SHOW"]:
-                game_name = game_name.replace(unwanted, "").strip()
-            
-            if not game_name and re.match(r"[A-Z]{3,}[A-Z]{2,}$", vendor):
-                split_match = re.match(r"^([A-Z]+?)([A-Z]{2,})$", vendor)
-                if split_match:
-                    game_name, vendor = split_match.groups()
-            
-            vendor_prefixes = ["XL", "X", "CAISHEN", "II", "WINS", "ILO", "DNT", "I", "Z"] # in case need to filter more
-            for prefix in vendor_prefixes:
-                if vendor.startswith(prefix):
-                    game_name = f"{game_name} {prefix}".strip()
-                    vendor = vendor[len(prefix):].strip()
-                    break
-
-            vendor = vendor.replace("_", " ").strip()
-            return [provider, game_name, vendor]
-
-        match2 = re.match(r"^(.*?)([A-Z]{2,})$", value)
-        if match2:
-            game_name, vendor = match2.groups()
-            return [provider_mapping.get("CAS", self.env("CAS")), game_name.strip(), vendor.strip()]
-
-        return [provider_mapping.get(value.strip(), value.strip())]
-
     # clear daily/weekly folder
     def clearFolders(self):
         user = getpass.getuser()
