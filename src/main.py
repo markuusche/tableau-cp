@@ -55,6 +55,8 @@ class Tableau(Helper):
                 self.wait_element(driver, 'dashboard', 'logo')
                 break
             except:
+                pyautogui.hotkey('command', 'a')
+                pyautogui.hotkey('delete')
                 sendOTP()
                 continue
     
@@ -84,7 +86,7 @@ class Tableau(Helper):
         if not monthly:
             self.download(driver) 
     
-        self.wait_element(driver, 'table', 'date-1')
+        self.wait_element(driver, 'table', 'date-1', timeout=120)
 
         if info["weekday_index"] == 0:
             inputDate(info["monday"], info["sunday"])
@@ -110,7 +112,7 @@ class Tableau(Helper):
                     self.wait_element(driver, 'table', 'table data')
                     table = self.search_element(driver, 'table', 'table data')
                     initial = table.get_attribute('data-datasrc')
-                    pyautogui.moveTo(1426, 426)
+                    pyautogui.moveTo(1149, 312)
                     pyautogui.click()
                     
                     while True:
@@ -167,12 +169,8 @@ class Tableau(Helper):
             for name in theFiles:
 
                 temp = []
-                monthly = []
 
                 file = target / name
-
-                statsList = self.env(stats)
-                envStats = statsList.replace(".csv", "")
                 nameFilter = name.replace(".csv","")
 
                 if not file.exists():

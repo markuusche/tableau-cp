@@ -19,6 +19,7 @@ table:
   download-btn:                                "div:last-child #download"
   iframe:                                      "iframe[title]"
   category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
+  export:                                      "#viz-viewer-toolbar > div:last-child #download"
   dropdown:                                    "div.tileContainer"
   download:                                    "div[aria-labelledby='download']"
   crosstab:                                    "div[aria-labelledby='download'] > div:nth-child(3) span:last-child"

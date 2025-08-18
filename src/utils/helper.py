@@ -316,8 +316,10 @@ class Helper:
     
     # download data page
     def download(self, driver):
+        driver.execute_script("return document.readyState") == "complete"
         driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
-        self.wait_element(driver, 'table', 'download')
+        self.wait_element(driver, 'table', 'download', timeout=10)
+        driver.execute_script("return document.readyState") == "complete"
 
         # very stupid flaky 
         while True:
@@ -325,7 +327,10 @@ class Helper:
                 self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
                 break
             except:
+                self.wait_element(driver, 'table', 'download')
                 continue
+        
+        driver.execute_script("return document.readyState") == "complete"
             
         # very very stupid flaky
         while True:
@@ -335,10 +340,9 @@ class Helper:
             except:
                 try:
                     self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                except:
                     break
-
-                continue
+                except:
+                    continue
         
         # another flaky guy
         while True:
@@ -375,7 +379,7 @@ class Helper:
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=180)
+        self.wait_element(driver, 'table', 'data', timeout=300)
 
     # authentication keys for game providers
     def getOTP(self):
