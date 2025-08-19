@@ -16,7 +16,6 @@ Project Dependencies
 - `python`
 - `pandas`
 - `pytest`
-- `pyotp`
 - `selenium`
 - `pyyaml`
 - `natsort`

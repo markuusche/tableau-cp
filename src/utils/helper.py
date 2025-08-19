@@ -1,5 +1,4 @@
 import yaml
-import pyotp
 import os, ast
 import shutil
 import getpass
@@ -7,7 +6,6 @@ import re
 import glob, os
 import pandas as pd
 from time import sleep
-from natsort import natsorted
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
@@ -380,12 +378,6 @@ class Helper:
         )
         driver.switch_to.frame(iframe)
         self.wait_element(driver, 'table', 'data', timeout=300)
-
-    # authentication keys for game providers
-    def getOTP(self):
-        totp = pyotp.TOTP(self.env('otpKey'))
-        otp = totp.now()
-        return otp
 
     # selenium function helper
     def search_element(self, driver, *keys, click=False):

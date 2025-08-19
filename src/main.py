@@ -6,7 +6,6 @@ from pathlib import Path
 from src.utils.helper import Helper
 from src.api.sheet import GoogleSheet
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 
 class Tableau(Helper):
 
@@ -22,43 +21,13 @@ class Tableau(Helper):
     # login user
     def userLogin(self, driver):
         driver.execute_script("return document.readyState") == "complete"
-        self.wait_element(driver, 'login', 'email')
-        email = self.search_element(driver, 'login', 'email')
-        email.send_keys(self.env('email'))
-        self.search_element(driver, 'login', 'btn', click=True)
-        self.wait_element(driver, 'login', 'pass')
-        try:
-            self.search_element(driver, 'login', 'cookies', click=True)
-            self.wait_element_invisibility(driver, 'login', 'cookies')
-        except:
-            pass
+        self.wait_element(driver, 'login', 'user')
+        user = self.search_element(driver, 'login', 'user')
+        user.send_keys(self.env('email'))
         password = self.search_element(driver, 'login', 'pass')
         password.send_keys(self.env('pass'))
-        self.search_element(driver, 'login', 'sign-in', click=True)
-
-        while True:
-            if self.env("sf") in driver.current_url:
-                break
-
-        driver.execute_script("return document.readyState") == "complete"
-        sleep(2)
-
-        def sendOTP():
-            actions = ActionChains(driver)
-            key = self.getOTP()
-            actions.send_keys(key).perform()
-            actions.send_keys(Keys.ENTER).perform()
-
-        sendOTP()
-        while True:
-            try:
-                self.wait_element(driver, 'dashboard', 'logo')
-                break
-            except:
-                pyautogui.hotkey('command', 'a')
-                pyautogui.hotkey('delete')
-                sendOTP()
-                continue
+        self.search_element(driver, 'login', 'submit', click=True)
+        self.wait_element(driver, 'dashboard', 'panel')
     
     def navigate(self, driver, monthly=False, iframe=False):
         # send date info to date text field
@@ -112,7 +81,7 @@ class Tableau(Helper):
                     self.wait_element(driver, 'table', 'table data')
                     table = self.search_element(driver, 'table', 'table data')
                     initial = table.get_attribute('data-datasrc')
-                    pyautogui.moveTo(1149, 312)
+                    pyautogui.moveTo(1427, 427)
                     pyautogui.click()
                     
                     while True:

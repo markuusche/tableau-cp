@@ -1,6 +1,5 @@
 pytest
 selenium
-pyotp
 pyyaml
 google-auth
 google-auth-oauthlib

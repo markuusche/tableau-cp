@@ -1,18 +1,10 @@
 login:
-  email:                                       "input#email"
-  pass:                                        "input#password"
-  btn:                                         "button #not-busy"
-  cookies:                                     "button#onetrust-accept-btn-handler"
-  sign-in:                                     "button#signInButton"
-
-otp:
-  field:                                       "#input-9"
-  box:                                         ".slds-box"
-  btn:                                         "button[type='submit']"
-  root:                                        "#root"
+  user:                                        "input[name=username]"
+  pass:                                        "input[name=password]"
+  submit:                                      "button[type=submit]"
 
 dashboard:
-  logo:                                        "a[title='Bivision']"
+  panel:                                       "nav[aria-label='Navigation panel']"
 
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
