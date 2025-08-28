@@ -76,29 +76,7 @@ class Tableau(Helper):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
-                if item == '':
-                    self._iframe(driver)
-                    self.wait_element(driver, 'table', 'table data')
-                    table = self.search_element(driver, 'table', 'table data')
-                    initial = table.get_attribute('data-datasrc')
-                    pyautogui.moveTo(1427, 427)
-                    pyautogui.click()
-                    
-                    while True:
-                        try:
-                            table = self.search_element(driver, 'table', 'table data')
-                            current = table.get_attribute('data-datasrc')
-                        except:
-                            continue
-                        
-                        if initial == current:
-                            continue
-                        else:
-                            break
-
-                    self.navigate(driver, monthly=monthly, iframe=True)
-                else:
-                    self.navigate(driver, monthly=monthly)
+                self.navigate(driver, monthly=monthly)
 
         if page:
             driver.get(self.env('statistics'))
@@ -127,7 +105,9 @@ class Tableau(Helper):
         self.moveFiles()
 
     def gameData(self, month=False):
-
+        
+        self.moveFiles()
+        sleep(3)
         # renames files
         self.modifyFiles(month)
 

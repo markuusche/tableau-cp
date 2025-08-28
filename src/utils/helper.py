@@ -315,6 +315,7 @@ class Helper:
     # download data page
     def download(self, driver):
         driver.execute_script("return document.readyState") == "complete"
+        self.wait_element(driver, 'table', 'toolbar', timeout=10)
         driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
         self.wait_element(driver, 'table', 'download', timeout=10)
         driver.execute_script("return document.readyState") == "complete"
@@ -369,7 +370,7 @@ class Helper:
                 setDate.send_keys(Keys.BACKSPACE)
                 setDate.send_keys(date)
                 self.download(driver)
-        except ElementNotInteractableException:
+        except:
             pass
         
     def _iframe(self, driver):

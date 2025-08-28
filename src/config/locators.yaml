@@ -21,6 +21,7 @@ table:
   data:                                        "div.tab-clip > div:nth-child(6)"
   date-1:                                      "#tabZoneId12 .QueryBox"
   date-2:                                      "#tabZoneId14 .QueryBox"
-  date-s:                                      "textarea[class='QueryBox']"
+  date-s:                                      "input[class='QueryBox']"
   title:                                       "#tableauTabbedNavigation_tab_8"
   table data:                                  "div.tab-tvYLabel img"
+  toolbar:                                     "div[role='toolbar']"
