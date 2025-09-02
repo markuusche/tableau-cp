@@ -106,8 +106,6 @@ class Tableau(Helper):
 
     def gameData(self, month=False):
         
-        self.moveFiles()
-        sleep(3)
         # renames files
         self.modifyFiles(month)
 
@@ -159,7 +157,12 @@ class Tableau(Helper):
                             if cell:
                                 for row in temp:
                                     row.insert(0, f"{info["sunday"]}")
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                    row[4] = row[4].replace(",", "")
+                                    
+                                sorts = sorted(temp, key=lambda x: int(x[4]), reverse=True)
+                                for sorting in sorts:
+                                    sorting[4] = f"{int(sorting[4]):,}"
+                                self.sheet.populateSheet(nameFilter, 'A2', sorts, event=True)
                         else:
                             cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                             if cell:

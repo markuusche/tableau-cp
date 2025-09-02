@@ -174,9 +174,9 @@ class Helper:
             file_map = ast.literal_eval(self.env(env_key) or "{}")
             for old, new in file_map.items():
                 rename(folder_path, old, new)
-    
+
     def sumEvent(self, folder: str, date: str, name: str):
-        all_game_names = set()
+        all_game_names = {}
         base_downloads = os.path.expanduser("~/Downloads")
         folderPath = os.path.join(base_downloads, folder)
         csv_files = glob.glob(os.path.join(folderPath, "*.csv"))
@@ -184,37 +184,48 @@ class Helper:
         for file in csv_files:
             with open(file, encoding="utf-16") as f:
                 lines = f.readlines()
-            for line in lines[1:]: 
+            for line in lines[1:]:
                 parts = line.strip().split("\t")
-                if len(parts) >= 3:
-                    all_game_names.add(parts[2])
+                if len(parts) >= 4:
+                    game = parts[3].strip()
+                    provider = parts[2].strip()
+                    all_game_names[game] = provider
 
-        total_sums = {game: [0, 0] for game in all_game_names}
+        total_sums = {game: {"provider": provider, "vals": [0, 0]} 
+                    for game, provider in all_game_names.items()}
 
         for file in csv_files:
             df = pd.read_csv(file, encoding="utf-16", sep="\t", header=None, engine="python")
             for _, row in df.iterrows():
-                game = str(row[2]).strip()
-                if game in total_sums:
-                    try:
-                        val1 = float(str(row[3]).replace(",", ""))
-                        val2 = float(str(row[4]).replace(",", ""))
-                        total_sums[game][0] += val1
-                        total_sums[game][1] += val2
-                    except (ValueError, IndexError):
-                        continue
-        c = []
-        sorted_totals = sorted(total_sums.items(), key=lambda item: item[1][0] + item[1][1], reverse=True)
+                try:
+                    game = str(row[3]).strip()
+                    provider = str(row[2]).strip()
+                    if game in total_sums:
+                        val1 = float(str(row[4]).replace(",", ""))
+                        val2 = float(str(row[5]).replace(",", ""))
+                        total_sums[game]["vals"][0] += val1
+                        total_sums[game]["vals"][1] += val2
+                except (ValueError, IndexError):
+                    continue
 
-        for game, (sum1, sum2) in sorted_totals:
-            w = [game, sum1, sum2]
+        sorted_totals = sorted(
+            total_sums.items(),
+            key=lambda item: item[1]["vals"][0] + item[1]["vals"][1],
+            reverse=True
+        )
+
+        c = []
+        for game, data in sorted_totals:
+            provider = data["provider"]
+            sum1, sum2 = data["vals"]
+            w = [provider, game, sum1, sum2]
             c.append(w)
-        
+
         for r in c:
             category_name = name.replace('1', '').replace('()', '')
             r.insert(0, date)
             r.insert(1, category_name)
-            
+
         return c
 
     def pageData(self):
