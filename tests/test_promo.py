@@ -4,6 +4,6 @@ class Test:
 
     data = Tableau()
 
-    def test_daily(self, driver):
-        self.data.gameReport(driver)
+    def test_promo(self, driver):
+        self.data.gameReport(driver, promo=True)
         self.data.gameData()

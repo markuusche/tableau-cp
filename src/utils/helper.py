@@ -42,37 +42,33 @@ class Helper:
         names = ast.literal_eval(file_names) if file_names else {}
         return names
     
-    # about files
-    def moveFiles(self, month=False, gameEvent=False, game=False, page=False):
-
-        def get_clean_basename(filename):
-            base, ext = os.path.splitext(filename)
-            base = re.sub(r'\s\(\d+\)$', '', base)
-            return base + ext
-
-        # path
-        def get_unique_path(folder, filename):
-            clean_name = get_clean_basename(filename)
-            base, ext = os.path.splitext(clean_name)
-            candidate = clean_name
-            counter = 1
-            while os.path.exists(os.path.join(folder, candidate)):
-                candidate = f"{base} ({counter}){ext}"
-                counter += 1
-            return os.path.join(folder, candidate)
-
+    @staticmethod
+    def get_unique_path(folder, filename):
+        #clean base name
+        base, ext = os.path.splitext(filename)
+        base = re.sub(r'\s\(\d+\)$', '', base)
+        file = base + ext
+        
+        clean_name = file
+        base, ext = os.path.splitext(clean_name)
+        candidate = clean_name
+        counter = 1
+        while os.path.exists(os.path.join(folder, candidate)):
+            candidate = f"{base} ({counter}){ext}"
+            counter += 1
+        return os.path.join(folder, candidate)
+    
+    def moveFiles(self, month: bool = False, gameEvent: bool = False, game: bool = False, page: bool = False, promo: bool = False):
         downloads = os.path.expanduser("~/Downloads")
-        weekly_folder = os.path.join(downloads, "weekly")
-        daily_folder = os.path.join(downloads, "daily")
-        stats_folder = os.path.join(downloads, "stats")
-        games = os.path.join(downloads, "games")
-        pages = os.path.join(downloads, "pages")
+        folder = lambda folder: os.path.join(downloads, folder)
+        labels = ["daily", "weekly", "stats", "games", "pages", "promo"]
 
-        os.makedirs(weekly_folder, exist_ok=True)
-        os.makedirs(daily_folder, exist_ok=True)
-        os.makedirs(stats_folder, exist_ok=True)
-        os.makedirs(games, exist_ok=True)
-        os.makedirs(pages, exist_ok=True)
+        path = {}
+        for item in labels:
+            path[item] = folder(item)
+
+        for value in path.values():
+            os.makedirs(value, exist_ok=True)
 
         files = self.renameFiles('file_names')
         file_renames = files
@@ -80,26 +76,25 @@ class Helper:
         if not game:
             for original_name in file_renames.keys():
                 source_path = os.path.join(downloads, original_name)
-                daily_target_path = os.path.join(daily_folder, original_name)
+                daily_target_path = os.path.join(path["daily"], original_name)
 
                 if os.path.exists(source_path):
-                    
                     if self.env("st") in original_name and os.path.exists(daily_target_path):
                         continue
 
                     if self.env("dg1") in original_name:
                         if gameEvent:
-                            target_folder = games
+                            target_folder = path["games"]
                         else:
-                            target_folder = weekly_folder
+                            target_folder = path["weekly"]
                     elif self.env("dg") in original_name or self.env("st") in original_name:
                         if self.env("st") in original_name and month:
                             continue
-                        target_folder = daily_folder
+                        target_folder = path["daily"]
                     else:
                         continue
 
-                    destination = get_unique_path(target_folder, original_name)
+                    destination = self.get_unique_path(target_folder, original_name)
                     shutil.move(source_path, destination)
                 else:
                     print(f"File not found: {original_name}")
@@ -107,15 +102,18 @@ class Helper:
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"))):
+            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"), self.env("pp"))):
+                movePath = lambda folder: os.path.join(path[folder], filename)
                 if gameEvent:
-                    destination = get_unique_path(daily_folder, filename)
+                    destination = self.get_unique_path(path["daily"], filename)
                 elif game:
-                    destination = os.path.join(games, filename)
+                    destination = movePath("games")
                 elif page:
-                    destination = os.path.join(pages, filename)
+                    destination = movePath("pages")
+                elif promo:
+                    destination = movePath("promo")
                 else:
-                    destination = os.path.join(stats_folder, filename)
+                    destination = movePath("stats")
                     
                 shutil.move(filepath, destination)
 
@@ -136,6 +134,7 @@ class Helper:
             'weekly_names': os.path.join(base_downloads, "weekly"),
             'stats_week_names': os.path.join(base_downloads, "stats"),
             'games_week_names': os.path.join(base_downloads, "games"),
+            'promo_week_names': os.path.join(base_downloads, "promo"),
         }
 
         def rename(folder, old_name, new_name):
@@ -147,8 +146,9 @@ class Helper:
         if month:
             del folders["stats_week_names"]
             del folders["games_week_names"]
+            del folders["promo_week_names"]
             
-            keys = ["stats", "games"]
+            keys = ["stats", "games", "promo"]
             
             for x in keys:
                 path = os.path.join(base_downloads, x)
@@ -175,36 +175,34 @@ class Helper:
             for old, new in file_map.items():
                 rename(folder_path, old, new)
 
-    def sumEvent(self, folder: str, date: str, name: str):
-        all_game_names = {}
+    def sumEventGeneric(self, folder: str, date: str, name: str, key_cols: list[int], val_cols: list[int]):
+
         base_downloads = os.path.expanduser("~/Downloads")
         folderPath = os.path.join(base_downloads, folder)
         csv_files = glob.glob(os.path.join(folderPath, "*.csv"))
 
+        all_keys = {}
         for file in csv_files:
             with open(file, encoding="utf-16") as f:
                 lines = f.readlines()
             for line in lines[1:]:
                 parts = line.strip().split("\t")
-                if len(parts) >= 4:
-                    game = parts[3].strip()
-                    provider = parts[2].strip()
-                    all_game_names[game] = provider
+                if len(parts) > max(key_cols):
+                    key = tuple(parts[i].strip() for i in key_cols)
+                    all_keys[key] = True
 
-        total_sums = {game: {"provider": provider, "vals": [0, 0]} 
-                    for game, provider in all_game_names.items()}
+        total_sums = {key: {"key": key, "vals": [0, 0]} for key in all_keys.keys()}
 
         for file in csv_files:
             df = pd.read_csv(file, encoding="utf-16", sep="\t", header=None, engine="python")
             for _, row in df.iterrows():
                 try:
-                    game = str(row[3]).strip()
-                    provider = str(row[2]).strip()
-                    if game in total_sums:
-                        val1 = float(str(row[4]).replace(",", ""))
-                        val2 = float(str(row[5]).replace(",", ""))
-                        total_sums[game]["vals"][0] += val1
-                        total_sums[game]["vals"][1] += val2
+                    key = tuple(str(row[i]).strip() for i in key_cols)
+                    if key in total_sums:
+                        val1 = float(str(row[val_cols[0]]).replace(",", ""))
+                        val2 = float(str(row[val_cols[1]]).replace(",", ""))
+                        total_sums[key]["vals"][0] += val1
+                        total_sums[key]["vals"][1] += val2
                 except (ValueError, IndexError):
                     continue
 
@@ -215,10 +213,9 @@ class Helper:
         )
 
         c = []
-        for game, data in sorted_totals:
-            provider = data["provider"]
+        for _, data in sorted_totals:
             sum1, sum2 = data["vals"]
-            w = [provider, game, sum1, sum2]
+            w = list(data["key"]) + [sum1, sum2]
             c.append(w)
 
         for r in c:
@@ -228,16 +225,21 @@ class Helper:
 
         return c
 
-    def pageData(self):
+    @staticmethod
+    def readCSV(folder):
         base = os.path.expanduser("~/Downloads")
-        path = os.path.join(base, 'pages')
-        files = glob.glob(os.path.join(path, "*.csv"))
+        path = os.path.join(base, folder)
+        file = glob.glob(os.path.join(path, "*.csv"))
+        return file
+
+    def pageData(self):
+        read = self.readCSV('pages')
         
         def order(filename):
             match = re.search(r"\((\d+)\)", filename)
             return int(match.group(1)) if match else -1
         
-        sorted_files = sorted(files, key=order, reverse=True)
+        sorted_files = sorted(read, key=order, reverse=True)
 
         a = []
         b = []
@@ -284,7 +286,7 @@ class Helper:
     def clearFolders(self):
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats", "games", "pages"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)
@@ -366,8 +368,9 @@ class Helper:
         self.wait_element_invisibility(driver, 'table', 'pop-up')
         sleep(2)
         
-    def singlePage(self, driver, data):
-        self._iframe(driver)
+    def singlePage(self, driver, data, promo: bool = False):
+        if not promo:
+            self._iframe(driver)
         try:
             
             try:
@@ -389,7 +392,7 @@ class Helper:
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=300)
+        self.wait_element(driver, 'table', 'data', timeout=10)
 
     # selenium function helper
     def search_element(self, driver, *keys, click=False):
