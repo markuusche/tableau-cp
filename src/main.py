@@ -171,15 +171,11 @@ class Tableau(Helper):
                         # for stats only purposes condition
                         if nameFilter == self.env("sts") or nameFilter == self.env("stsg"):
                             cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
+                            
                             if cell:
-                                for row in temp:
-                                    row.insert(0, f"{info["sunday"]}")
-                                    row[4] = row[4].replace(",", "")
-                                    
-                                sorts = sorted(temp, key=lambda x: int(x[4]), reverse=True)
-                                for sorting in sorts:
-                                    sorting[4] = f"{int(sorting[4]):,}"
-                                self.sheet.populateSheet(nameFilter, 'A2', sorts, event=True)
+                                sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
+                                self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
+
                         elif nameFilter == self.env("pts"):
                             self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                         else:
@@ -207,10 +203,10 @@ class Tableau(Helper):
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
-        a, b = self.pageData()
-        check = self.sheet.getCellValue(self.env("pop"), event=True) != a[0][0]
+        popular, others = self.pageData()
+        check = self.sheet.getCellValue(self.env("pop"), event=True) != popular[0][0]
         if check:
-            self.sheet.populateSheet(self.env("pop"), 'A2', a, event=True)
-            self.sheet.populateSheet(self.env("cats"), 'A2', b, event=True)
+            self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
+            self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
 
         self.clearFolders()

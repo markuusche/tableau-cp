@@ -231,6 +231,19 @@ class Helper:
         path = os.path.join(base, folder)
         file = glob.glob(os.path.join(path, "*.csv"))
         return file
+    
+    @staticmethod
+    def sortIndexDesc(data: list, date: str | None = None):
+        for row in data:
+            if date:
+                row.insert(0, date)
+            row[4] = row[4].replace(",", "")
+        
+        sorted_data = sorted(data, key=lambda index: int(index[4]), reverse=True)
+        for sort in sorted_data:
+            sort[4] = f"{int(sort[4]):,}"
+        
+        return sorted_data
 
     def pageData(self):
         read = self.readCSV('pages')
@@ -241,8 +254,8 @@ class Helper:
         
         sorted_files = sorted(read, key=order, reverse=True)
 
-        a = []
-        b = []
+        popular = []
+        others = []
         
         for p in sorted_files:
             k = [[], [], [], [], [], []]
@@ -277,10 +290,33 @@ class Helper:
                 else:
                     k[5].append(x)
         
-            a.extend(k[4])
-            b.extend(k[5])
+            popular.extend(k[4])
+            others.extend(k[5])
         
-        return a, b
+        # popular sorting
+        from collections import defaultdict
+        sorted_data = self.sortIndexDesc(popular)
+        
+        #others sorting
+        grouped = defaultdict(list)
+        for row in others:
+            category = row[1]
+            grouped[category].append(row)
+
+        sorted_result = []
+        for category, rows in grouped.items():
+            sorted_rows = sorted(
+                rows,
+                key=lambda x: int(x[4].replace(",", "")),
+                reverse=True
+            )
+            sorted_result.extend(sorted_rows)
+
+        others = []
+        for row in sorted_result:
+            others.append(row)
+        
+        return sorted_data, others
 
     # clear daily/weekly folder
     def clearFolders(self):
