@@ -18,17 +18,6 @@ class Tableau(Helper):
         self.weekly_games_files = self.env('weekly_games_files', True)
         self.promo_week = self.env('promo_weekly', True)
         self.downloads = os.path.expanduser("~/Downloads")
-
-    # login user
-    def userLogin(self, driver):
-        driver.execute_script("return document.readyState") == "complete"
-        self.wait_element(driver, 'login', 'user')
-        user = self.search_element(driver, 'login', 'user')
-        user.send_keys(self.env('email'))
-        password = self.search_element(driver, 'login', 'pass')
-        password.send_keys(self.env('pass'))
-        self.search_element(driver, 'login', 'submit', click=True)
-        self.wait_element(driver, 'dashboard', 'panel')
     
     def navigate(self, driver, monthly: bool = False, iframe: bool = False):
         # send date info to date text field
@@ -69,29 +58,31 @@ class Tableau(Helper):
             self.moveFiles()
 
     # Full game report workbook
-    def gameReport(self, driver, monthly: bool = False, page: bool = False, promo: bool = False):
-        self.userLogin(driver)
+    def gameReport(self, driver, **options):
+        
+        def getCSV(url: str):
+            driver.get(url)
+            self._iframe(driver)
+            self.download(driver)
+            self.moveFiles(gameEvent=True)
+
         info = self.getWeekInfo()
 
         # dashboard
-        if not page and not promo:
+        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo"]):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
-                self.navigate(driver, monthly=monthly)
+                self.navigate(driver, monthly=options.get("monthly"))
 
-        if page:
+        if options.get("page"):
             driver.get(self.env('statistics'))
             self._iframe(driver)
 
-            if not monthly:
+            if not options.get("monthly"):
                 self.download(driver)
-                
                 # another data to separate
-                driver.get(self.env("event") + self.env("games"))
-                self._iframe(driver)
-                self.download(driver)
-                self.moveFiles(gameEvent=True)
+                getCSV(self.env("event") + self.env("games"))
 
             if info["weekday_index"] == 0:
                 categories = self.env('tracking', True)
@@ -103,15 +94,16 @@ class Tableau(Helper):
                     else:
                         self.moveFiles(game=True)
 
-        if promo:
-            driver.get(self.env("promo"))
-            self._iframe(driver)
-            self.download(driver)
-            self.moveFiles(gameEvent=True)
+        if options.get("promo"):
+            getCSV(self.env("promo"))
+            
             # for future use
             # if info["weekday_index"] == 0:
             #     self.singlePage(driver, info["full_week"], promo=True)
             #     self.moveFiles(promo=promo)
+        
+        if options.get("otherPromo"):
+            getCSV(self.env("otherPromo"))
 
         self.moveFiles()
 
@@ -133,8 +125,9 @@ class Tableau(Helper):
 
                 if not file.exists():
                     continue
-
-                skip = 1 if any(keyword in nameFilter for keyword in [self.env('sts'), self.env('stsg'), self.env('pts')]) else 2
+                    
+                keywords = ["sts", "stsg", "pts", "opt"]
+                skip = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader):
@@ -176,7 +169,7 @@ class Tableau(Helper):
                                 sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
                                 self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
 
-                        elif nameFilter == self.env("pts"):
+                        elif nameFilter == self.env("pts") or nameFilter == self.env("opt"):
                             self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                         else:
                             cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
@@ -198,7 +191,6 @@ class Tableau(Helper):
         self.clearFolders()
     
     def homePage(self, driver):
-        self.userLogin(driver)
         driver.get(self.env("classification"))
         self._iframe(driver)
         self.download(driver)

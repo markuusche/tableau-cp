@@ -2,7 +2,7 @@ import pytest
 from selenium import webdriver
 from src.utils.helper import Helper
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="session")
 def driver():
     #setup
     URL = Helper()
@@ -23,6 +23,7 @@ def driver():
     driver = webdriver.Chrome(options=option)
     driver.maximize_window()
     driver.get(URL.env('main'))
+    URL.userLogin(driver)
 
     yield driver
         

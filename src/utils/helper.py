@@ -58,7 +58,8 @@ class Helper:
             counter += 1
         return os.path.join(folder, candidate)
     
-    def moveFiles(self, month: bool = False, gameEvent: bool = False, game: bool = False, page: bool = False, promo: bool = False):
+    def moveFiles(self, **options):
+        
         downloads = os.path.expanduser("~/Downloads")
         folder = lambda folder: os.path.join(downloads, folder)
         labels = ["daily", "weekly", "stats", "games", "pages", "promo"]
@@ -73,7 +74,7 @@ class Helper:
         files = self.renameFiles('file_names')
         file_renames = files
         
-        if not game:
+        if not options.get("game"):
             for original_name in file_renames.keys():
                 source_path = os.path.join(downloads, original_name)
                 daily_target_path = os.path.join(path["daily"], original_name)
@@ -83,12 +84,12 @@ class Helper:
                         continue
 
                     if self.env("dg1") in original_name:
-                        if gameEvent:
+                        if options.get("gameEvent"):
                             target_folder = path["games"]
                         else:
                             target_folder = path["weekly"]
                     elif self.env("dg") in original_name or self.env("st") in original_name:
-                        if self.env("st") in original_name and month:
+                        if self.env("st") in original_name and options.get("month"):
                             continue
                         target_folder = path["daily"]
                     else:
@@ -104,20 +105,20 @@ class Helper:
             filepath = os.path.join(downloads, filename)
             if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"), self.env("pp"))):
                 movePath = lambda folder: os.path.join(path[folder], filename)
-                if gameEvent:
+                if options.get("gameEvent"):
                     destination = self.get_unique_path(path["daily"], filename)
-                elif game:
+                elif options.get("game"):
                     destination = movePath("games")
-                elif page:
+                elif options.get("page"):
                     destination = movePath("pages")
-                elif promo:
+                elif options.get("promo"):
                     destination = movePath("promo")
                 else:
                     destination = movePath("stats")
                     
                 shutil.move(filepath, destination)
 
-        if month:
+        if options.get("month"):
             monthly_folder = os.path.join(downloads, "stats")
             os.makedirs(monthly_folder, exist_ok=True)
 
@@ -422,6 +423,17 @@ class Helper:
                 self.download(driver)
         except:
             pass
+    
+    # login user
+    def userLogin(self, driver):
+        driver.execute_script("return document.readyState") == "complete"
+        self.wait_element(driver, 'login', 'user')
+        user = self.search_element(driver, 'login', 'user')
+        user.send_keys(self.env('email'))
+        password = self.search_element(driver, 'login', 'pass')
+        password.send_keys(self.env('pass'))
+        self.search_element(driver, 'login', 'submit', click=True)
+        self.wait_element(driver, 'dashboard', 'panel')
         
     def _iframe(self, driver):
         iframe = WebDriverWait(driver, 30).until(
