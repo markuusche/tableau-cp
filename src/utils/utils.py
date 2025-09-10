@@ -1,46 +1,31 @@
-import yaml
-import os, ast
-import shutil
 import getpass
-import re
-import glob, os
 import pandas as pd
-from time import sleep
 from zoneinfo import ZoneInfo
+import os, re, shutil, ast, glob
 from datetime import datetime, timedelta
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import ElementNotInteractableException
+from src.helpers.helper import Helpers
 
-class Helper:
-
-    #locator fetch helper 
-    def data(self, *keys):
-        with open('src/config/locators.yaml','r') as file:
-            getData = yaml.load(file, Loader=yaml.FullLoader)
-
-        for key in keys:
-            getData = getData[key]
-
-        return getData
+class Utils(Helpers):
     
-    # get bashrc value
-    def env(self, key, is_list=False):
-        if is_list:
-            raw = os.environ.get(key)
-            value = raw.split(":")
-        else:
-            value = os.environ.get(key)
-
-        return value
-
-    # rename file(s)?
-    def renameFiles(self, file):
-        file_names = self.env(file)
-        names = ast.literal_eval(file_names) if file_names else {}
-        return names
+    @staticmethod
+    def readCSV(folder):
+        base = os.path.expanduser("~/Downloads")
+        path = os.path.join(base, folder)
+        file = glob.glob(os.path.join(path, "*.csv"))
+        return file
+    
+    @staticmethod
+    def sortIndexDesc(data: list, date: str | None = None):
+        for row in data:
+            if date:
+                row.insert(0, date)
+            row[4] = row[4].replace(",", "")
+        
+        sorted_data = sorted(data, key=lambda index: int(index[4]), reverse=True)
+        for sort in sorted_data:
+            sort[4] = f"{int(sort[4]):,}"
+        
+        return sorted_data
     
     @staticmethod
     def get_unique_path(folder, filename):
@@ -57,6 +42,12 @@ class Helper:
             candidate = f"{base} ({counter}){ext}"
             counter += 1
         return os.path.join(folder, candidate)
+    
+    # rename file(s)?
+    def renameFiles(self, file):
+        file_names = self.env(file)
+        names = ast.literal_eval(file_names) if file_names else {}
+        return names
     
     def moveFiles(self, **options):
         
@@ -226,26 +217,6 @@ class Helper:
 
         return c
 
-    @staticmethod
-    def readCSV(folder):
-        base = os.path.expanduser("~/Downloads")
-        path = os.path.join(base, folder)
-        file = glob.glob(os.path.join(path, "*.csv"))
-        return file
-    
-    @staticmethod
-    def sortIndexDesc(data: list, date: str | None = None):
-        for row in data:
-            if date:
-                row.insert(0, date)
-            row[4] = row[4].replace(",", "")
-        
-        sorted_data = sorted(data, key=lambda index: int(index[4]), reverse=True)
-        for sort in sorted_data:
-            sort[4] = f"{int(sort[4]):,}"
-        
-        return sorted_data
-
     def pageData(self):
         read = self.readCSV('pages')
         
@@ -319,7 +290,7 @@ class Helper:
         
         return sorted_data, others
 
-    # clear daily/weekly folder
+    # delete daily/weekly folder
     def clearFolders(self):
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
@@ -329,7 +300,6 @@ class Helper:
             folders = os.path.join(downloads, folder)
             if os.path.exists(folders):
                 shutil.rmtree(folders)
-                print(f"Deleted folder: {folders}")
 
     # get weeks/day info
     def getWeekInfo(self):
@@ -342,8 +312,6 @@ class Helper:
         sunday = today - timedelta(days=1)
 
         full_week = [(monday + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
-
-        # check if the day today is the first day of the month? stupid
         last_month_dates = []
         if date_obj.day == 1:
             first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
@@ -361,115 +329,3 @@ class Helper:
             "full_week": full_week,
             "last_month_dates": last_month_dates
         }
-    
-    # download data page
-    def download(self, driver):
-        driver.execute_script("return document.readyState") == "complete"
-        self.wait_element(driver, 'table', 'toolbar', timeout=10)
-        driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
-        self.wait_element(driver, 'table', 'download', timeout=10)
-        driver.execute_script("return document.readyState") == "complete"
-
-        # very stupid flaky 
-        while True:
-            try:
-                self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                break
-            except:
-                self.wait_element(driver, 'table', 'download')
-                continue
-        
-        driver.execute_script("return document.readyState") == "complete"
-            
-        # very very stupid flaky
-        while True:
-            try:
-                self.wait_element(driver, 'table', 'pop-up', timeout=5)
-                break
-            except:
-                try:
-                    self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                    break
-                except:
-                    continue
-        
-        # another flaky guy
-        while True:
-            try:
-                self.search_element(driver, 'table', 'csv', click=True)
-                break
-            except:
-                continue
-    
-        self.search_element(driver, 'table', 'btn', click=True)
-        self.wait_element_invisibility(driver, 'table', 'pop-up')
-        sleep(2)
-        
-    def singlePage(self, driver, data, promo: bool = False):
-        if not promo:
-            self._iframe(driver)
-        try:
-            
-            try:
-                self.wait_element(driver, 'table', 'data', timeout=180)
-            except:
-                pass
-            
-            for date in data:
-                setDate = self.search_element(driver, 'table', 'date-s')
-                setDate.send_keys(Keys.COMMAND, 'a')
-                setDate.send_keys(Keys.BACKSPACE)
-                setDate.send_keys(date)
-                self.download(driver)
-        except:
-            pass
-    
-    # login user
-    def userLogin(self, driver):
-        driver.execute_script("return document.readyState") == "complete"
-        self.wait_element(driver, 'login', 'user')
-        user = self.search_element(driver, 'login', 'user')
-        user.send_keys(self.env('email'))
-        password = self.search_element(driver, 'login', 'pass')
-        password.send_keys(self.env('pass'))
-        self.search_element(driver, 'login', 'submit', click=True)
-        self.wait_element(driver, 'dashboard', 'panel')
-        
-    def _iframe(self, driver):
-        iframe = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
-        )
-        driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=10)
-
-    # selenium function helper
-    def search_element(self, driver, *keys, click=False):
-        locator = self.data(*keys)
-        element = driver.find_element(By.CSS_SELECTOR, locator)
-        if click:
-            element.click()
-        else:
-            return element
-
-    def wait_element(self, driver, *keys, timeout=60):
-        path = (By.CSS_SELECTOR, self.data(*keys))
-        element = WebDriverWait(driver, timeout)
-        element.until(EC.visibility_of_element_located(path))
-    
-    def wait_element_invisibility(self, driver, *keys, absolute=False, timeout=120):
-        try:
-            locator = (By.CSS_SELECTOR, self.data(*keys))
-            element = WebDriverWait(driver, timeout)
-            if absolute:
-                element.until(EC.invisibility_of_element_located(locator))
-            else:  
-                element.until(EC.invisibility_of_element(locator))
-        except:
-            print(f'\033[91m[ FAILED ] "{locator}" element still diplayed.')
-    
-    def wait_clickable(self, driver, *keys, timeout=60):
-        locator = (By.CSS_SELECTOR, self.data(*keys))
-        wait = WebDriverWait(driver, timeout)
-        element = wait.until(EC.element_to_be_clickable(locator),
-        message=f'\033[91m[ FAILED ] "{locator}" element was not clickable.')
-        element.click()

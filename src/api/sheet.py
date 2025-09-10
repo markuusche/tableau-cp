@@ -1,9 +1,9 @@
-from src.utils.helper import Helper
+from src.helpers.helper import Helpers
 import httplib2, google_auth_httplib2
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-helper = Helper()
+helper = Helpers()
 
 class GoogleSheet:
     def __init__(self):

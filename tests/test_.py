@@ -1,11 +1,11 @@
 import pytest
 from src.main import Tableau
-from src.utils.helper import Helper
+from src.utils.utils import Utils
 
 class Test:
 
     data = Tableau()
-    info = Helper()
+    info = Utils()
 
     def test_daily(self, driver):
         self.data.gameReport(driver)

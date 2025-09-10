@@ -1,11 +1,13 @@
 import pytest
 from selenium import webdriver
-from src.utils.helper import Helper
+from src.helpers.helper import Helpers
+from src.utils.tools import Tools
 
 @pytest.fixture(scope="session")
 def driver():
     #setup
-    URL = Helper()
+    URL = Helpers()
+    user = Tools()
     option = webdriver.ChromeOptions()
     option.add_argument("--no-sandbox")
     option.add_argument("--disable-infobars")
@@ -23,7 +25,7 @@ def driver():
     driver = webdriver.Chrome(options=option)
     driver.maximize_window()
     driver.get(URL.env('main'))
-    URL.userLogin(driver)
+    user.userLogin(driver)
 
     yield driver
         
