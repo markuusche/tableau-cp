@@ -46,7 +46,7 @@ class Tableau(Utils, Tools):
     
         self.wait_element(driver, 'table', 'date-1', timeout=120)
 
-        if info["weekday_index"] == 2:
+        if info["weekday_index"] == 0:
             inputDate(info["monday"], info["sunday"])
 
         if not monthly:
@@ -83,7 +83,7 @@ class Tableau(Utils, Tools):
                 # another data to separate
                 getCSV(self.env("event") + self.env("games"))
 
-            if info["weekday_index"] == 2:
+            if info["weekday_index"] == 0:
                 categories = self.env('tracking', True)
                 for i, item in enumerate(categories):
                     driver.get(self.env('event') + f"页面={item}")
@@ -97,7 +97,7 @@ class Tableau(Utils, Tools):
             getCSV(self.env("promo"))
             
             # for future use
-            # if info["weekday_index"] == 2:
+            # if info["weekday_index"] == 0:
             #     self.singlePage(driver, info["full_week"], promo=True)
             #     self.moveFiles(promo=promo)
         
@@ -145,7 +145,7 @@ class Tableau(Utils, Tools):
                         
                 if not month:
                     date = f"{info["monday"]} - {info["sunday"]}"
-                    if info["weekday_index"] == 2 and stats in {"week_stats", "game_stats"}:
+                    if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter or "Games (" in nameFilter:
                             data = self.sumEventGeneric(mode, date, nameFilter, key_cols=[2, 3], val_cols=[4, 5])
                             env = self.env("st_weekly") if "Home (" in nameFilter else self.env("sg_weekly")

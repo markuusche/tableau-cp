@@ -13,8 +13,19 @@ class Tools(Helpers):
         self.wait_element(driver, 'login', 'user')
         user = self.search_element(driver, 'login', 'user')
         user.send_keys(self.env('email'))
+        self.search_element(driver, 'login', 'submit', click=True)
+        self.wait_element(driver, 'login', 'pass')
         password = self.search_element(driver, 'login', 'pass')
         password.send_keys(self.env('pass'))
+        self.search_element(driver, 'login', 'submit', click=True)
+        self.wait_element(driver, 'login', 'otp')
+        otp = self.search_element(driver, 'login', 'otp')
+        
+        import pyotp
+        key = self.env("otpKey")
+        userOTP = pyotp.TOTP(key)
+        
+        otp.send_keys(userOTP.now())
         self.search_element(driver, 'login', 'submit', click=True)
         self.wait_element(driver, 'dashboard', 'panel')
         

@@ -1,7 +1,8 @@
 login:
-  user:                                        "input[name=username]"
+  user:                                        "input#username"
   pass:                                        "input[name=password]"
-  submit:                                      "button[type=submit]"
+  submit:                                      "form div button[type='submit']"
+  otp:                                         "input#code"
 
 dashboard:
   panel:                                       "nav[aria-label='Navigation panel']"
