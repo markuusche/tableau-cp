@@ -79,7 +79,7 @@ class Utils(Helpers):
                             target_folder = path["games"]
                         else:
                             target_folder = path["weekly"]
-                    elif self.env("dg") in original_name or self.env("st") in original_name:
+                    elif any(self.env(k) in original_name for k in ("dg", "st")):
                         if self.env("st") in original_name and options.get("month"):
                             continue
                         target_folder = path["daily"]
@@ -94,7 +94,7 @@ class Utils(Helpers):
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"), self.env("pp"))):
+            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"), self.env("pp"), self.env("mb"))):
                 movePath = lambda folder: os.path.join(path[folder], filename)
                 if options.get("gameEvent"):
                     destination = self.get_unique_path(path["daily"], filename)

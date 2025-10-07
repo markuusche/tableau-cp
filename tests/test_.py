@@ -23,9 +23,14 @@ class Test:
         self.data.gameReport(driver, otherPromo=True)
         self.data.gameData()    
         
+    def test_miniBanner(self, driver):
+        self.data.gameReport(driver, miniBanner=True)
+        self.data.gameData()
+        
     def test_monthly(self, driver):
         if len(self.info.getWeekInfo()["last_month_dates"]) != 0:
             self.data.gameReport(driver, monthly=True)
             self.data.gameData(month=True)
         else:
             pytest.skip()
+

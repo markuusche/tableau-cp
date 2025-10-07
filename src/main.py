@@ -19,6 +19,9 @@ class Tableau(Utils, Tools):
         self.downloads = os.path.expanduser("~/Downloads")
     
     def navigate(self, driver, monthly: bool = False, iframe: bool = False):
+        """
+        Page navigation — helps with downloading ? :O
+        """
         # send date info to date text field
         info = self.getWeekInfo()
         def inputDate(dateOne, dateTwo):
@@ -58,6 +61,9 @@ class Tableau(Utils, Tools):
 
     # Full game report workbook
     def gameReport(self, driver, **options):
+        """
+        Downloads the data in the web
+        """
         
         def getCSV(url: str):
             driver.get(url)
@@ -68,7 +74,7 @@ class Tableau(Utils, Tools):
         info = self.getWeekInfo()
 
         # dashboard
-        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo"]):
+        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner"]):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
@@ -92,14 +98,12 @@ class Tableau(Utils, Tools):
                         self.moveFiles()
                     else:
                         self.moveFiles(game=True)
+                        
+        if options.get("miniBanner"):
+           getCSV(self.env("minban"))
 
         if options.get("promo"):
             getCSV(self.env("promo"))
-            
-            # for future use
-            # if info["weekday_index"] == 0:
-            #     self.singlePage(driver, info["full_week"], promo=True)
-            #     self.moveFiles(promo=promo)
         
         if options.get("otherPromo"):
             getCSV(self.env("otherPromo"))
@@ -107,6 +111,9 @@ class Tableau(Utils, Tools):
         self.moveFiles()
 
     def gameData(self, month: bool = False):
+        """
+        Filters data and send to Google Sheet
+        """
         
         # renames files
         self.modifyFiles(month)
@@ -126,18 +133,23 @@ class Tableau(Utils, Tools):
                     continue
                     
                 keywords = ["sts", "stsg", "pts", "opt"]
-                skip = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
+                skip_rows = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader):
-
-                        if i < skip:
+                        
+                        if i == 0: 
                             continue
                         
                         if not row:
                             continue
-
-                        temp.append(row[skip:])
+                        
+                        if nameFilter == self.env("mban"):
+                            temp.append(row)
+                        else:
+                            if i < skip_rows:
+                                continue
+                            temp.append(row[skip_rows:])
                         
                 def insertDates(temp, data, data2):
                     for date in temp:
@@ -151,11 +163,6 @@ class Tableau(Utils, Tools):
                             env = self.env("st_weekly") if "Home (" in nameFilter else self.env("sg_weekly")
                             self.sheet.populateSheet(env, 'A2', data, event=True)
                             break
-                        # for future use
-                        # elif "Promo (" in nameFilter:
-                        #     data = self.sumEventGeneric(mode, date, nameFilter, key_cols=[3, 4, 5], val_cols=[6, 7])
-                        #     self.sheet.populateSheet(self.env("pp_weekly"), 'A2', data, event=True)
-                        #     break
                         else:
                             insertDates(temp, info["monday"], info["sunday"])
                             self.sheet.populateSheet(nameFilter, 'A2', temp)
@@ -168,8 +175,9 @@ class Tableau(Utils, Tools):
                                 sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
                                 self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
 
-                        elif nameFilter == self.env("pts") or nameFilter == self.env("opt"):
+                        elif nameFilter == self.env("pts") or nameFilter == self.env("opt") or nameFilter == self.env("mban"):
                             self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+
                         else:
                             cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                             if cell:
@@ -190,6 +198,10 @@ class Tableau(Utils, Tools):
         self.clearFolders()
     
     def homePage(self, driver):
+        """
+        Gets the Home & Games data separated from main data fetching
+        """
+
         driver.get(self.env("classification"))
         self._iframe(driver)
         self.download(driver)
