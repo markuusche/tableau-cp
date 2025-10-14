@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 class Tools(Helpers):
     
     # login user
-    def userLogin(self, driver):
+    def userLogin(self, driver) -> None:
         driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'login', 'user')
         user = self.search_element(driver, 'login', 'user')
@@ -30,14 +30,14 @@ class Tools(Helpers):
         self.wait_element(driver, 'dashboard', 'panel')
         
     # switch to iframe    
-    def _iframe(self, driver):
+    def _iframe(self, driver) -> None:
         iframe = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
         self.wait_element(driver, 'table', 'data', timeout=10)
         
-    def singlePage(self, driver, data, promo: bool = False):
+    def singlePage(self, driver, data, promo: bool = False) -> None:
         if not promo:
             self._iframe(driver)
         try:
@@ -57,7 +57,7 @@ class Tools(Helpers):
             pass
         
     # download data page
-    def download(self, driver):
+    def download(self, driver) -> None:
         driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'table', 'toolbar', timeout=10)
         driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')

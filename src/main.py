@@ -18,7 +18,7 @@ class Tableau(Utils, Tools):
         self.promo_week = self.env('promo_weekly', True)
         self.downloads = os.path.expanduser("~/Downloads")
     
-    def navigate(self, driver, monthly: bool = False, iframe: bool = False):
+    def navigate(self, driver, monthly: bool = False, iframe: bool = False) -> None:
         """
         Page navigation — helps with downloading ? :O
         """
@@ -60,7 +60,7 @@ class Tableau(Utils, Tools):
             self.moveFiles()
 
     # Full game report workbook
-    def gameReport(self, driver, **options):
+    def gameReport(self, driver, **options) -> None:
         """
         Downloads the data in the web
         """
@@ -110,7 +110,7 @@ class Tableau(Utils, Tools):
 
         self.moveFiles()
 
-    def gameData(self, month: bool = False):
+    def gameData(self, month: bool = False) -> None:
         """
         Filters data and send to Google Sheet
         """
@@ -197,7 +197,7 @@ class Tableau(Utils, Tools):
 
         self.clearFolders()
     
-    def homePage(self, driver):
+    def homePage(self, driver) -> None:
         """
         Gets the Home & Games data separated from main data fetching
         """

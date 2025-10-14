@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 helper = Helpers()
 
 class GoogleSheet:
+
     def __init__(self):
         self.scopes = [
             'https://www.googleapis.com/auth/spreadsheets',
@@ -18,7 +19,7 @@ class GoogleSheet:
         self.service = build('sheets', 'v4', http=self.auth)
         self.sheet = self.service.spreadsheets()
 
-    def populateSheet(self, sheetName, cell, values, event=False):
+    def populateSheet(self, sheetName: str, cell: str, values: list, event=False):
         range_name = f'{sheetName}!{cell}'
         Id = helper.env('sheetId') if not event else helper.env('evtrckId')
         sheet_metadata = self.sheet.get(spreadsheetId=Id).execute()
@@ -58,7 +59,7 @@ class GoogleSheet:
             body={"values": values}
         ).execute()
  
-    def getCellValue(self, range, event=False):
+    def getCellValue(self, range: str, event: bool = False):
         Id = helper.env('evtrckId') if event else helper.env('sheetId')
         result = self.sheet.values().get(
             spreadsheetId=Id,

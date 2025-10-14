@@ -8,14 +8,14 @@ from src.helpers.helper import Helpers
 class Utils(Helpers):
     
     @staticmethod
-    def readCSV(folder):
+    def readCSV(folder) -> str:
         base = os.path.expanduser("~/Downloads")
         path = os.path.join(base, folder)
         file = glob.glob(os.path.join(path, "*.csv"))
         return file
     
     @staticmethod
-    def sortIndexDesc(data: list, date: str | None = None):
+    def sortIndexDesc(data: list, date: str | None = None) -> list[list]:
         for row in data:
             if date:
                 row.insert(0, date)
@@ -28,7 +28,7 @@ class Utils(Helpers):
         return sorted_data
     
     @staticmethod
-    def get_unique_path(folder, filename):
+    def get_unique_path(folder, filename) -> str:
         #clean base name
         base, ext = os.path.splitext(filename)
         base = re.sub(r'\s\(\d+\)$', '', base)
@@ -44,7 +44,7 @@ class Utils(Helpers):
         return os.path.join(folder, candidate)
     
     # rename file(s)?
-    def renameFiles(self, file):
+    def renameFiles(self, file) -> str:
         file_names = self.env(file)
         names = ast.literal_eval(file_names) if file_names else {}
         return names
@@ -119,7 +119,7 @@ class Utils(Helpers):
                 shutil.move(unnumbered_file, new_path)
 
     # rename the files 
-    def modifyFiles(self, month=False):
+    def modifyFiles(self, month: bool = False) -> None:
         base_downloads = os.path.expanduser("~/Downloads")
         folders = {
             'file_names': os.path.join(base_downloads, "daily"),
@@ -129,7 +129,7 @@ class Utils(Helpers):
             'promo_week_names': os.path.join(base_downloads, "promo"),
         }
 
-        def rename(folder, old_name, new_name):
+        def rename(folder, old_name, new_name) -> None:
             old_path = os.path.join(folder, old_name)
             if os.path.exists(old_path):
                 new_path = os.path.join(folder, new_name)
@@ -167,7 +167,10 @@ class Utils(Helpers):
             for old, new in file_map.items():
                 rename(folder_path, old, new)
 
-    def sumEventGeneric(self, folder: str, date: str, name: str, key_cols: list[int], val_cols: list[int]):
+    def sumEventGeneric(self, folder: str, date: str, name: str, key_cols: list[int], val_cols: list[int]) -> list[list]:
+        """
+        Sums all the total amount/value of all file
+        """
 
         base_downloads = os.path.expanduser("~/Downloads")
         folderPath = os.path.join(base_downloads, folder)
@@ -217,7 +220,10 @@ class Utils(Helpers):
 
         return c
 
-    def pageData(self):
+    def pageData(self) -> tuple[list, list]:
+        """
+        Filters & separates 1 data into 2
+        """
         read = self.readCSV('pages')
         
         def order(filename):
@@ -291,7 +297,7 @@ class Utils(Helpers):
         return sorted_data, others
 
     # delete daily/weekly folder
-    def clearFolders(self):
+    def clearFolders(self) -> None:
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
         folders_names = ["daily", "weekly", "stats", "games", "pages", "promo"]
@@ -302,7 +308,7 @@ class Utils(Helpers):
                 shutil.rmtree(folders)
 
     # get weeks/day info
-    def getWeekInfo(self):
+    def getWeekInfo(self) -> dict:
         today = datetime.now(ZoneInfo("Asia/Manila"))
         date_str = today.strftime("%Y-%m-%d")
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
