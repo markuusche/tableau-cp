@@ -43,6 +43,35 @@ class Utils(Helpers):
             counter += 1
         return os.path.join(folder, candidate)
     
+    @staticmethod
+    def getWeekInfo() -> dict:
+        today = datetime.now(ZoneInfo("Asia/Manila"))
+        date_str = today.strftime("%Y-%m-%d")
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        weekday_index = date_obj.weekday()
+
+        monday = today - timedelta(days=7)
+        sunday = today - timedelta(days=1)
+
+        full_week = [(monday + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+        last_month_dates = []
+        if date_obj.day == 1:
+            first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
+            last_of_last_month = date_obj.replace(day=1) - timedelta(days=1)
+            last_month_dates = [
+                (first_of_last_month + timedelta(days=i)).strftime("%Y-%m-%d")
+                for i in range((last_of_last_month - first_of_last_month).days + 1)
+            ]
+
+        return {
+            "today": date_str,
+            "weekday_index": weekday_index,
+            "monday": monday.strftime("%Y-%m-%d"),
+            "sunday": sunday.strftime("%Y-%m-%d"),
+            "full_week": full_week,
+            "last_month_dates": last_month_dates
+        }
+
     # rename file(s)?
     def renameFiles(self, file) -> str:
         file_names = self.env(file)
@@ -53,7 +82,7 @@ class Utils(Helpers):
         
         downloads = os.path.expanduser("~/Downloads")
         folder = lambda folder: os.path.join(downloads, folder)
-        labels = ["daily", "weekly", "stats", "games", "pages", "promo"]
+        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats"]
 
         path = {}
         for item in labels:
@@ -94,7 +123,7 @@ class Utils(Helpers):
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith((self.env("st"), self.env("stp"), self.env("pp"), self.env("mb"))):
+            if os.path.isfile(filepath) and filename.startswith(tuple(self.env(key) for key in ["st", "stp", "pp", "mb", "hp"])):
                 movePath = lambda folder: os.path.join(path[folder], filename)
                 if options.get("gameEvent"):
                     destination = self.get_unique_path(path["daily"], filename)
@@ -104,6 +133,8 @@ class Utils(Helpers):
                     destination = movePath("pages")
                 elif options.get("promo"):
                     destination = movePath("promo")
+                elif options.get("homeStatistics"):
+                    destination = movePath("home_stats")
                 else:
                     destination = movePath("stats")
                     
@@ -136,10 +167,10 @@ class Utils(Helpers):
                 os.rename(old_path, new_path)
 
         if month:
-            del folders["stats_week_names"]
-            del folders["games_week_names"]
-            del folders["promo_week_names"]
-            
+            for key in list(folders.keys()):
+                if key not in ["file_names", "weekly_names"]:
+                    del folders[key]
+        
             keys = ["stats", "games", "promo"]
             
             for x in keys:
@@ -224,6 +255,7 @@ class Utils(Helpers):
         """
         Filters & separates 1 data into 2
         """
+        # Sorry, for spaghetti. :3
         read = self.readCSV('pages')
         
         def order(filename):
@@ -300,38 +332,9 @@ class Utils(Helpers):
     def clearFolders(self) -> None:
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)
             if os.path.exists(folders):
                 shutil.rmtree(folders)
-
-    # get weeks/day info
-    def getWeekInfo(self) -> dict:
-        today = datetime.now(ZoneInfo("Asia/Manila"))
-        date_str = today.strftime("%Y-%m-%d")
-        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-        weekday_index = date_obj.weekday()
-
-        monday = today - timedelta(days=7)
-        sunday = today - timedelta(days=1)
-
-        full_week = [(monday + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
-        last_month_dates = []
-        if date_obj.day == 1:
-            first_of_last_month = (date_obj.replace(day=1) - timedelta(days=1)).replace(day=1)
-            last_of_last_month = date_obj.replace(day=1) - timedelta(days=1)
-            last_month_dates = [
-                (first_of_last_month + timedelta(days=i)).strftime("%Y-%m-%d")
-                for i in range((last_of_last_month - first_of_last_month).days + 1)
-            ]
-
-        return {
-            "today": date_str,
-            "weekday_index": weekday_index,
-            "monday": monday.strftime("%Y-%m-%d"),
-            "sunday": sunday.strftime("%Y-%m-%d"),
-            "full_week": full_week,
-            "last_month_dates": last_month_dates
-        }

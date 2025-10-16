@@ -1,3 +1,9 @@
+# =====================================================================================
+# =========================== [ TABLEAU DATA AUTOMATION ] =============================
+# ============================= @github.com/markuusche ================================
+# =============================== © 2025 - markuusche =================================
+# =====================================================================================
+
 import pytest
 from src.main import Tableau
 from src.utils.utils import Utils
@@ -25,6 +31,10 @@ class Test:
         
     def test_miniBanner(self, driver):
         self.data.gameReport(driver, miniBanner=True)
+        self.data.gameData()
+    
+    def test_homeStatistics(self, driver):
+        self.data.gameReport(driver, homeStatistics=True)
         self.data.gameData()
         
     def test_monthly(self, driver):

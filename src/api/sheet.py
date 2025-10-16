@@ -18,40 +18,56 @@ class GoogleSheet:
         self.auth = google_auth_httplib2.AuthorizedHttp(self.credentials, http=self.http)
         self.service = build('sheets', 'v4', http=self.auth)
         self.sheet = self.service.spreadsheets()
-
-    def populateSheet(self, sheetName: str, cell: str, values: list, event=False):
-        range_name = f'{sheetName}!{cell}'
-        Id = helper.env('sheetId') if not event else helper.env('evtrckId')
+    
+    def getSheetID(self, Id: str | int):
         sheet_metadata = self.sheet.get(spreadsheetId=Id).execute()
         sheets = sheet_metadata.get('sheets', '')
-
-        # get sheet Id
+        
         sheetsIds = {
             sheet['properties']['title']: sheet['properties']['sheetId']
             for sheet in sheets
         }
-
-        # add row above the data
-        add_row = len(values)
-        requests = [
+        
+        return sheetsIds
+    
+    def sheet_request_body(self, Id: str | int, sheetName: str, startIndex: int = 1):
+        sheetsIds = self.getSheetID(Id)
+        return [
             {
                 "insertDimension": {
                     "range": {
                         "sheetId": sheetsIds[sheetName],
                         "dimension": "ROWS",
-                        "startIndex": 1, 
-                        "endIndex": add_row + 1
+                        "startIndex": startIndex, 
                     },
-                    "inheritFromBefore": False
                 }
             }
         ]
+
+    def populateSheet(self, sheetName: str, cell: str, values: list, **options):
+        """
+        Populates sheet in single request, instead of 1 by 1
+        """
+        
+        if options.get("event"):
+            Id = helper.env('evtrckId')
+        elif options.get("homeStats"):
+            Id = helper.env('homeStats')
+        else:
+            Id = helper.env('sheetId')
+            
+        # get sheet Id
+        add_row = len(values)
+        requests = self.sheet_request_body(Id, sheetName)
+        requests[0]["insertDimension"]["range"]["endIndex"] = add_row + 1
+        requests[0]["insertDimension"]["inheritFromBefore"] = False
 
         self.sheet.batchUpdate(
             spreadsheetId=Id,
             body={"requests": requests}
         ).execute()
 
+        range_name = f'{sheetName}!{cell}'
         self.sheet.values().update(
             spreadsheetId=Id,
             range=range_name,
@@ -60,11 +76,30 @@ class GoogleSheet:
         ).execute()
  
     def getCellValue(self, range: str, event: bool = False):
+        """
+        Use for checking cell of the given cell is eq or not to expected.
+        """
+        
         Id = helper.env('evtrckId') if event else helper.env('sheetId')
         result = self.sheet.values().get(
             spreadsheetId=Id,
             range=f'{range}!A2'
             ).execute()
+
         if 'values' in result:
             value = result.get('values', [])
             return value[0][0]
+
+    def clearDeleteSheet(self, Id: str | int, sheetName: str):
+        requests = self.sheet_request_body(Id, sheetName, startIndex=2)
+        requests[0]["deleteDimension"] = requests[0].pop("insertDimension")
+
+        self.sheet.values().clear(
+            spreadsheetId=Id,
+            range=f"{sheetName}!A2:I"
+        ).execute()
+        
+        self.sheet.batchUpdate(
+            spreadsheetId=Id,
+            body={"requests": requests}
+        ).execute()

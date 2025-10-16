@@ -1,3 +1,4 @@
+import pyotp
 from time import sleep
 from src.helpers.helper import Helpers
 from selenium.webdriver.common.by import By
@@ -9,6 +10,12 @@ class Tools(Helpers):
     
     # login user
     def userLogin(self, driver) -> None:
+        
+        def getOTP():
+            key = self.env("otpKey")
+            userOTP = pyotp.TOTP(key)
+            return userOTP.now()
+        
         driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'login', 'user')
         user = self.search_element(driver, 'login', 'user')
@@ -21,14 +28,18 @@ class Tools(Helpers):
         self.wait_element(driver, 'login', 'otp')
         otp = self.search_element(driver, 'login', 'otp')
         
-        import pyotp
-        key = self.env("otpKey")
-        userOTP = pyotp.TOTP(key)
-        
-        otp.send_keys(userOTP.now())
-        self.search_element(driver, 'login', 'submit', click=True)
-        self.wait_element(driver, 'dashboard', 'panel')
-        
+        for _ in range(3):
+            try:
+                otp.send_keys(getOTP())
+                self.search_element(driver, 'login', 'submit', click=True)
+                self.wait_element(driver, 'dashboard', 'panel', timeout=5)
+                break
+            except:
+                otp = self.search_element(driver, 'login', 'otp')
+                otp.clear()
+                sleep(1)
+                continue
+
     # switch to iframe    
     def _iframe(self, driver) -> None:
         iframe = WebDriverWait(driver, 30).until(
@@ -56,45 +67,68 @@ class Tools(Helpers):
         except:
             pass
         
+
     # download data page
-    def download(self, driver) -> None:
+    def download(self, driver, data: bool = False) -> None:
+        
         driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'table', 'toolbar', timeout=10)
         driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
         self.wait_element(driver, 'table', 'download', timeout=10)
         driver.execute_script("return document.readyState") == "complete"
-
-        # very stupid flaky 
-        while True:
-            try:
-                self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
-                break
-            except:
-                self.wait_element(driver, 'table', 'download')
-                continue
         
-        driver.execute_script("return document.readyState") == "complete"
-            
-        # very very stupid flaky
-        while True:
-            try:
-                self.wait_element(driver, 'table', 'pop-up', timeout=5)
-                break
-            except:
+        def cross_data_selection(key: str):
+            while True:
                 try:
-                    self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                    self.wait_clickable(driver, 'table', key, timeout=5)
+                    break
+                except:
+                    self.wait_element(driver, 'table', 'download')
+                    continue
+                
+            driver.execute_script("return document.readyState") == "complete"
+
+        if not data:
+            # download is very flaky
+            cross_data_selection('crosstab')
+                
+            while True:
+                try:
+                    self.wait_element(driver, 'table', 'pop-up', timeout=5)
+                    break
+                except:
+                    try:
+                        self.wait_clickable(driver, 'table', 'crosstab', timeout=5)
+                        break
+                    except:
+                        continue
+            
+            while True:
+                try:
+                    self.search_element(driver, 'table', 'csv', click=True)
                     break
                 except:
                     continue
         
-        # another flaky guy
-        while True:
-            try:
-                self.search_element(driver, 'table', 'csv', click=True)
-                break
-            except:
-                continue
-    
-        self.search_element(driver, 'table', 'btn', click=True)
-        self.wait_element_invisibility(driver, 'table', 'pop-up')
-        sleep(2)
+            self.search_element(driver, 'table', 'btn', click=True)
+            self.wait_element_invisibility(driver, 'table', 'pop-up')
+            sleep(2)
+        else:
+            cross_data_selection('download data')
+            sleep(3)
+            main = driver.current_window_handle
+            handles = driver.window_handles
+            while len(handles) < 1:
+                sleep(1)
+            else:
+                for handle in handles:
+                    if handle != main:
+                        driver.switch_to.window(handle)
+                        driver.execute_script("return document.readyState") == "complete"
+                        self.search_element(driver, 'table', 'pop-up data', click=True)
+                        self.wait_element(driver, 'table', 'info')
+                        sleep(3)
+                        driver.close()
+                        break
+                
+                driver.switch_to.window(main)

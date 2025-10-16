@@ -1,6 +1,13 @@
+# =====================================================================================
+# =========================== [ TABLEAU DATA AUTOMATION ] =============================
+# ============================= @github.com/markuusche ================================
+# =============================== © 2025 - markuusche =================================
+# =====================================================================================
+
 import csv, os
 from time import sleep
 from pathlib import Path
+from itertools import zip_longest
 from src.utils.utils import Utils
 from src.utils.tools import Tools
 from src.api.sheet import GoogleSheet
@@ -16,6 +23,7 @@ class Tableau(Utils, Tools):
         self.weekly_stats_files = self.env('weekly_stats_files', True)
         self.weekly_games_files = self.env('weekly_games_files', True)
         self.promo_week = self.env('promo_weekly', True)
+        self.homeStatsFile = self.env("homeStatsFiles", True)
         self.downloads = os.path.expanduser("~/Downloads")
     
     def navigate(self, driver, monthly: bool = False, iframe: bool = False) -> None:
@@ -74,7 +82,7 @@ class Tableau(Utils, Tools):
         info = self.getWeekInfo()
 
         # dashboard
-        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner"]):
+        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner", "homeStatistics"]):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
@@ -107,6 +115,16 @@ class Tableau(Utils, Tools):
         
         if options.get("otherPromo"):
             getCSV(self.env("otherPromo"))
+            
+        if options.get("homeStatistics"):
+            scenes = self.env("scenes", True)
+            for scene in scenes:
+                driver.get(self.env("rawSliders") + f"User Type={scene}")
+                self._iframe(driver)
+                self.wait_element(driver, 'table', 'tab')
+                self.download(driver, True)
+
+            self.moveFiles(homeStatistics=True)
 
         self.moveFiles()
 
@@ -117,12 +135,14 @@ class Tableau(Utils, Tools):
         
         # renames files
         self.modifyFiles(month)
-
+        
         # data fetch/filtering
         def dataList(mode, stats: str, theFiles):
             target = Path.home() / f"Downloads/{mode}"
             info = self.getWeekInfo()
-            for name in theFiles:
+            scenes = self.env("scenes", True)
+            run = True
+            for name, scene in zip_longest(theFiles, scenes[::-1]):
 
                 temp = []
 
@@ -131,26 +151,26 @@ class Tableau(Utils, Tools):
 
                 if not file.exists():
                     continue
-                    
-                keywords = ["sts", "stsg", "pts", "opt"]
+                
+                keywords = ["sts", "stsg", "pts", "opt", "hp"]
                 skip_rows = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader):
                         
-                        if i == 0: 
+                        if i == 0 or not row: 
                             continue
                         
-                        if not row:
-                            continue
+                        if scene is not None and self.env("hp") in nameFilter:
+                            row.insert(8, scene)
                         
-                        if nameFilter == self.env("mban"):
+                        if nameFilter == self.env("mban") or self.env("hp") in nameFilter:
                             temp.append(row)
                         else:
                             if i < skip_rows:
                                 continue
                             temp.append(row[skip_rows:])
-                        
+                    
                 def insertDates(temp, data, data2):
                     for date in temp:
                         date[0] = f"{data} - {data2}"
@@ -178,6 +198,12 @@ class Tableau(Utils, Tools):
                         elif nameFilter == self.env("pts") or nameFilter == self.env("opt") or nameFilter == self.env("mban"):
                             self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
 
+                        elif self.env("hp") in nameFilter:
+                            if run:
+                                self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
+                                
+                            self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
+                            run = False
                         else:
                             cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                             if cell:
@@ -194,6 +220,7 @@ class Tableau(Utils, Tools):
         dataList("games", "game_stats", self.weekly_games_files)
         dataList("stats", "week_stats", month_or_week)
         dataList("promo", "week_stats", self.promo_week)
+        dataList("home_stats", "stats", self.homeStatsFile)
 
         self.clearFolders()
     
