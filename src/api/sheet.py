@@ -53,6 +53,8 @@ class GoogleSheet:
             Id = helper.env('evtrckId')
         elif options.get("homeStats"):
             Id = helper.env('homeStats')
+        elif options.get("emailVerification"):
+            Id = helper.env("evsheet")
         else:
             Id = helper.env('sheetId')
             

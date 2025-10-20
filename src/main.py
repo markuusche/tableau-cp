@@ -10,6 +10,7 @@ from pathlib import Path
 from itertools import zip_longest
 from src.utils.utils import Utils
 from src.utils.tools import Tools
+from datetime import date, timedelta
 from src.api.sheet import GoogleSheet
 from selenium.webdriver.common.keys import Keys
 
@@ -17,13 +18,6 @@ class Tableau(Utils, Tools):
 
     def __init__(self):
         self.sheet = GoogleSheet()
-        self.files = self.env('files', True)
-        self.week_files = self.env('week_files', True)
-        self.monthly_files = self.env('wkstat', True)
-        self.weekly_stats_files = self.env('weekly_stats_files', True)
-        self.weekly_games_files = self.env('weekly_games_files', True)
-        self.promo_week = self.env('promo_weekly', True)
-        self.homeStatsFile = self.env("homeStatsFiles", True)
         self.downloads = os.path.expanduser("~/Downloads")
     
     def navigate(self, driver, monthly: bool = False, iframe: bool = False) -> None:
@@ -82,7 +76,7 @@ class Tableau(Utils, Tools):
         info = self.getWeekInfo()
 
         # dashboard
-        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner", "homeStatistics"]):
+        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner", "homeStatistics", "emailVerification"]):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
@@ -125,6 +119,19 @@ class Tableau(Utils, Tools):
                 self.download(driver, True)
 
             self.moveFiles(homeStatistics=True)
+        
+        if options.get("emailVerification"):
+            driver.get(self.env("em") + info["sunday"])
+            self._iframe(driver)
+            self.download(driver)
+            
+            for tab in ["tab-1", "tab-2"]:
+                self.search_element(driver, "table", tab, click=True)
+                self.wait_element(driver, "table", "data")
+                driver.execute_script("location.reload()")
+                self.download(driver)
+                
+            self.moveFiles(emailVerification=True)
 
         self.moveFiles()
 
@@ -146,17 +153,21 @@ class Tableau(Utils, Tools):
 
                 temp = []
 
+                if not name:
+                    continue
+
                 file = target / name
+                
                 nameFilter = name.replace(".csv","")
 
                 if not file.exists():
                     continue
                 
-                keywords = ["sts", "stsg", "pts", "opt", "hp"]
+                keywords = ["sts", "stsg", "pts", "opt", "hp", "tab", "tab1", "tab2"]
                 skip_rows = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
-                    for i, row in enumerate(reader):
+                    for i, row in enumerate(reader): 
                         
                         if i == 0 or not row: 
                             continue
@@ -164,13 +175,13 @@ class Tableau(Utils, Tools):
                         if scene is not None and self.env("hp") in nameFilter:
                             row.insert(8, scene)
                         
-                        if nameFilter == self.env("mban") or self.env("hp") in nameFilter:
+                        if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in ["hp", "tab", "tab1", "tab2"]):
                             temp.append(row)
                         else:
                             if i < skip_rows:
                                 continue
                             temp.append(row[skip_rows:])
-                    
+
                 def insertDates(temp, data, data2):
                     for date in temp:
                         date[0] = f"{data} - {data2}"
@@ -187,40 +198,45 @@ class Tableau(Utils, Tools):
                             insertDates(temp, info["monday"], info["sunday"])
                             self.sheet.populateSheet(nameFilter, 'A2', temp)
                     else:
-                        # for stats only purposes condition
-                        if nameFilter == self.env("sts") or nameFilter == self.env("stsg"):
-                            cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
+                         match nameFilter:
+                            case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
+                                cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
+                                if cell:
+                                    sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
+                                    self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
                             
-                            if cell:
-                                sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
-                                self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
-
-                        elif nameFilter == self.env("pts") or nameFilter == self.env("opt") or nameFilter == self.env("mban"):
-                            self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
-
-                        elif self.env("hp") in nameFilter:
-                            if run:
-                                self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
+                            case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
+                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                            
+                            case _ if self.env("hp") in nameFilter:
+                                if run:
+                                    self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
+                                self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
+                                run = False
                                 
-                            self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
-                            run = False
-                        else:
-                            cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
-                            if cell:
-                                self.sheet.populateSheet(nameFilter, 'A2', temp)
+                            case _ if any(self.env(key) in nameFilter.strip() for key in ["tab", "tab1", "tab2"]):
+                                from datetime import datetime
+                                sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"), reverse=True)
+                                self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True)
+               
+                            case _:
+                                cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
+                                if cell:
+                                    self.sheet.populateSheet(nameFilter, 'A2', temp)
                 else:
                     sheet_names = nameFilter + " (Monthly)"
                     dates = info["last_month_dates"]
                     insertDates(temp, min(dates), max(dates))
                     self.sheet.populateSheet(sheet_names, 'A2', temp)
 
-        month_or_week = self.monthly_files if month else self.weekly_stats_files
-        dataList("daily", "stats", self.files)
-        dataList("weekly", "week_stats", self.week_files)
-        dataList("games", "game_stats", self.weekly_games_files)
+        month_or_week = self.env('wkstat', True) if month else self.env('weekly_stats_files', True)
+        dataList("daily", "stats", self.env("files", True))
+        dataList("weekly", "week_stats", self.env("week_files", True))
+        dataList("games", "game_stats", self.env("weekly_games_files", True))
         dataList("stats", "week_stats", month_or_week)
-        dataList("promo", "week_stats", self.promo_week)
-        dataList("home_stats", "stats", self.homeStatsFile)
+        dataList("promo", "week_stats", self.env('promo_weekly', True))
+        dataList("home_stats", "stats", self.env("homeStatsFiles", True))
+        dataList("email_verification", "stats", self.env("emailFileData", True))
 
         self.clearFolders()
     

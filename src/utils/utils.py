@@ -82,7 +82,7 @@ class Utils(Helpers):
         
         downloads = os.path.expanduser("~/Downloads")
         folder = lambda folder: os.path.join(downloads, folder)
-        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats"]
+        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification"]
 
         path = {}
         for item in labels:
@@ -123,7 +123,7 @@ class Utils(Helpers):
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            if os.path.isfile(filepath) and filename.startswith(tuple(self.env(key) for key in ["st", "stp", "pp", "mb", "hp"])):
+            if os.path.isfile(filepath) and filename.startswith(tuple(self.env(key) for key in ["st", "stp", "pp", "mb", "hp", "tab", "tab1", "tab2"])):
                 movePath = lambda folder: os.path.join(path[folder], filename)
                 if options.get("gameEvent"):
                     destination = self.get_unique_path(path["daily"], filename)
@@ -135,6 +135,8 @@ class Utils(Helpers):
                     destination = movePath("promo")
                 elif options.get("homeStatistics"):
                     destination = movePath("home_stats")
+                elif options.get("emailVerification"):
+                    destination = movePath("email_verification")
                 else:
                     destination = movePath("stats")
                     
@@ -332,7 +334,7 @@ class Utils(Helpers):
     def clearFolders(self) -> None:
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)

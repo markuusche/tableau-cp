@@ -30,3 +30,6 @@ table:
   table data:                                  "div.tab-tvYLabel img"
   toolbar:                                     "div[role='toolbar']"
   tab:                                         "#tabZoneId12"
+  tab-1:                                       "#tableauTabbedNavigation_tab_1"
+  tab-2:                                       "#tableauTabbedNavigation_tab_2"
+

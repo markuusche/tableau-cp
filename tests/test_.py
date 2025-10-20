@@ -36,6 +36,10 @@ class Test:
     def test_homeStatistics(self, driver):
         self.data.gameReport(driver, homeStatistics=True)
         self.data.gameData()
+    
+    def test_emailVerification(self, driver):
+        self.data.gameReport(driver, emailVerification=True)
+        self.data.gameData()
         
     def test_monthly(self, driver):
         if len(self.info.getWeekInfo()["last_month_dates"]) != 0:
@@ -43,4 +47,3 @@ class Test:
             self.data.gameData(month=True)
         else:
             pytest.skip()
-
