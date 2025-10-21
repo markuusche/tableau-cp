@@ -58,24 +58,32 @@ class GoogleSheet:
         else:
             Id = helper.env('sheetId')
             
-        # get sheet Id
-        add_row = len(values)
-        requests = self.sheet_request_body(Id, sheetName)
-        requests[0]["insertDimension"]["range"]["endIndex"] = add_row + 1
-        requests[0]["insertDimension"]["inheritFromBefore"] = False
+        if options.get("singleData"):
+                self.sheet.values().append(
+                spreadsheetId=Id,
+                range=f"{sheetName}!{cell}",
+                valueInputOption='RAW',
+                insertDataOption='INSERT_ROWS',
+                body={"values": values}
+            ).execute()
+        else:
+            add_row = len(values)
+            requests = self.sheet_request_body(Id, sheetName)
+            requests[0]["insertDimension"]["range"]["endIndex"] = add_row + 1
+            requests[0]["insertDimension"]["inheritFromBefore"] = False
 
-        self.sheet.batchUpdate(
-            spreadsheetId=Id,
-            body={"requests": requests}
-        ).execute()
+            self.sheet.batchUpdate(
+                spreadsheetId=Id,
+                body={"requests": requests}
+            ).execute()
 
-        range_name = f'{sheetName}!{cell}'
-        self.sheet.values().update(
-            spreadsheetId=Id,
-            range=range_name,
-            valueInputOption='RAW',
-            body={"values": values}
-        ).execute()
+            range_name = f'{sheetName}!{cell}'
+            self.sheet.values().update(
+                spreadsheetId=Id,
+                range=range_name,
+                valueInputOption='RAW',
+                body={"values": values}
+            ).execute()
  
     def getCellValue(self, range: str, event: bool = False):
         """

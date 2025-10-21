@@ -9,7 +9,7 @@ dashboard:
 
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
-  download-btn:                                "div:last-child #download"
+  download-btn:                                "button#download"
   iframe:                                      "iframe[title]"
   category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
   export:                                      "#viz-viewer-toolbar > div:last-child #download"
@@ -32,4 +32,3 @@ table:
   tab:                                         "#tabZoneId12"
   tab-1:                                       "#tableauTabbedNavigation_tab_1"
   tab-2:                                       "#tableauTabbedNavigation_tab_2"
-

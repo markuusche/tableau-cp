@@ -126,6 +126,7 @@ class Tableau(Utils, Tools):
             self.download(driver)
             
             for tab in ["tab-1", "tab-2"]:
+                self.wait_element(driver, "table", tab)
                 self.search_element(driver, "table", tab, click=True)
                 self.wait_element(driver, "table", "data")
                 driver.execute_script("location.reload()")
@@ -216,9 +217,8 @@ class Tableau(Utils, Tools):
                                 
                             case _ if any(self.env(key) in nameFilter.strip() for key in ["tab", "tab1", "tab2"]):
                                 from datetime import datetime
-                                sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"), reverse=True)
-                                self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True)
-               
+                                sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"))
+                                self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True, singleData=True)
                             case _:
                                 cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                                 if cell:
