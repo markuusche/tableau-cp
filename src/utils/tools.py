@@ -10,7 +10,7 @@ class Tools(Helpers):
     
     # login user
     def userLogin(self, driver) -> None:
-        
+
         def getOTP():
             key = self.env("otpKey")
             userOTP = pyotp.TOTP(key)
@@ -46,8 +46,12 @@ class Tools(Helpers):
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
-        self.wait_element(driver, 'table', 'data', timeout=10)
-        
+
+        try:
+            self.wait_element(driver, 'table', 'data', timeout=60)
+        except:
+            pass
+
     def singlePage(self, driver, data, promo: bool = False) -> None:
         if not promo:
             self._iframe(driver)
@@ -66,7 +70,6 @@ class Tools(Helpers):
                 self.download(driver)
         except:
             pass
-        
 
     # download data page
     def download(self, driver, data: bool = False) -> None:
@@ -77,7 +80,7 @@ class Tools(Helpers):
         self.wait_element(driver, 'table', 'download', timeout=10)
         driver.execute_script("return document.readyState") == "complete"
         
-        def cross_data_selection(key: str):
+        def wait_until_clickable(key: str):
             while True:
                 try:
                     self.wait_clickable(driver, 'table', key, timeout=5)
@@ -90,7 +93,7 @@ class Tools(Helpers):
 
         if not data:
             # download is very flaky
-            cross_data_selection('crosstab')
+            wait_until_clickable('crosstab')
                 
             while True:
                 try:
@@ -114,7 +117,7 @@ class Tools(Helpers):
             self.wait_element_invisibility(driver, 'table', 'pop-up')
             sleep(2)
         else:
-            cross_data_selection('download data')
+            wait_until_clickable('download data')
             sleep(3)
             main = driver.current_window_handle
             handles = driver.window_handles

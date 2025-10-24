@@ -7,8 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 class Helpers:
     
-    #locator fetch helper 
-    def data(self, *keys) -> str:
+    @staticmethod 
+    def data(*keys) -> str:
         with open('src/config/locators.yaml','r') as file:
             getData = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -17,8 +17,8 @@ class Helpers:
 
         return getData
     
-    # get bashrc value
-    def env(self, key: str, is_list: bool = False) -> list[str] | None:
+    @staticmethod
+    def env(key: str, is_list: bool = False) -> list[str] | None:
         data = os.environ.get(key)
         if data is None:
             return [] if is_list else ""

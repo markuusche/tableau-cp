@@ -85,7 +85,7 @@ class GoogleSheet:
                 body={"values": values}
             ).execute()
  
-    def getCellValue(self, range: str, event: bool = False):
+    def getCellValue(self, sheetName: str, event: bool = False):
         """
         Use for checking cell of the given cell is eq or not to expected.
         """
@@ -93,7 +93,7 @@ class GoogleSheet:
         Id = helper.env('evtrckId') if event else helper.env('sheetId')
         result = self.sheet.values().get(
             spreadsheetId=Id,
-            range=f'{range}!A2'
+            range=f'{sheetName}!A2'
             ).execute()
 
         if 'values' in result:

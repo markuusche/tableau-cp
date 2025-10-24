@@ -50,16 +50,14 @@ class Tableau(Utils, Tools):
             self.download(driver) 
     
         self.wait_element(driver, 'table', 'date-1', timeout=120)
-
+        
         if info["weekday_index"] == 0:
             inputDate(info["monday"], info["sunday"])
 
-        if not monthly:
-            self.moveFiles()
-        
         if monthly:
             inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
-            self.moveFiles()
+
+        self.moveFiles()
 
     # Full game report workbook
     def gameReport(self, driver, **options) -> None:
@@ -76,7 +74,7 @@ class Tableau(Utils, Tools):
         info = self.getWeekInfo()
 
         # dashboard
-        if all(not options.get(flag) for flag in ["page", "promo", "otherPromo", "miniBanner", "homeStatistics", "emailVerification"]):
+        if all(not options.get(flag) for flag in self.env("boolKeys", True)):
             categories = self.env('categories', True)
             for item in categories:
                 driver.get(self.env('tableau') + f"Category={item}")
@@ -164,8 +162,7 @@ class Tableau(Utils, Tools):
                 if not file.exists():
                     continue
                 
-                keywords = ["sts", "stsg", "pts", "opt", "hp", "tab", "tab1", "tab2"]
-                skip_rows = 1 if any(self.env(key) in nameFilter for key in keywords) else 2
+                skip_rows = 1 if any(self.env(key) in nameFilter for key in self.env("skipRowsKeys", True)) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
                     for i, row in enumerate(reader): 
@@ -176,7 +173,7 @@ class Tableau(Utils, Tools):
                         if scene is not None and self.env("hp") in nameFilter:
                             row.insert(8, scene)
                         
-                        if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in ["hp", "tab", "tab1", "tab2"]):
+                        if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in self.env("nameFilterKeys", True)):
                             temp.append(row)
                         else:
                             if i < skip_rows:
