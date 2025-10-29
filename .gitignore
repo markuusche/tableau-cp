@@ -7,3 +7,4 @@ __pycache__/
 .cache/
 asd.py
 .DS_Store
+merged.py

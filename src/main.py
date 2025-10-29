@@ -73,7 +73,7 @@ class Tableau(Utils, Tools):
 
         info = self.getWeekInfo()
 
-        # dashboard
+        # all game data
         if all(not options.get(flag) for flag in self.env("boolKeys", True)):
             categories = self.env('categories', True)
             for item in categories:
@@ -131,6 +131,9 @@ class Tableau(Utils, Tools):
                 self.download(driver)
                 
             self.moveFiles(emailVerification=True)
+            
+        if options.get("recentPlay"):
+            getCSV(self.env("recentPlay"))
 
         self.moveFiles()
 
@@ -172,7 +175,7 @@ class Tableau(Utils, Tools):
                         
                         if scene is not None and self.env("hp") in nameFilter:
                             row.insert(8, scene)
-                        
+
                         if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in self.env("nameFilterKeys", True)):
                             temp.append(row)
                         else:
@@ -198,13 +201,17 @@ class Tableau(Utils, Tools):
                     else:
                          match nameFilter:
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
-                                cell = self.sheet.getCellValue(range=nameFilter, event=True) != temp[0][0]
+                                cell = self.sheet.getCellValue(sheetName=nameFilter, event=True) != temp[0][0]
                                 if cell:
                                     sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
                                     self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
                             
                             case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                
+                            case _ if nameFilter == self.env("rp"):
+                                recentPlaySort = sorted(temp, key=lambda row: int(row[4].replace(',', '')), reverse=True)[:20]
+                                self.sheet.populateSheet(self.env("t20"), 'A2', recentPlaySort, popular=True)
                             
                             case _ if self.env("hp") in nameFilter:
                                 if run:

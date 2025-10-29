@@ -55,6 +55,8 @@ class GoogleSheet:
             Id = helper.env('homeStats')
         elif options.get("emailVerification"):
             Id = helper.env("evsheet")
+        elif options.get("popular"):
+            Id = helper.env("popularCompleteData")
         else:
             Id = helper.env('sheetId')
             

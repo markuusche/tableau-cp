@@ -37,8 +37,12 @@ class Test:
     #     self.data.gameReport(driver, homeStatistics=True)
     #     self.data.gameData()
     
-    def test_emailVerification(self, driver):
-        self.data.gameReport(driver, emailVerification=True)
+    # def test_emailVerification(self, driver):
+    #     self.data.gameReport(driver, emailVerification=True)
+    #     self.data.gameData()
+        
+    def test_recentPlay(self, driver):
+        self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
         
     def test_monthly(self, driver):
