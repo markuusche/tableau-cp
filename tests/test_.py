@@ -33,6 +33,10 @@ class Test:
         self.data.gameReport(driver, miniBanner=True)
         self.data.gameData()
     
+    def test_popUp(self, driver):
+        self.data.gameReport(driver, popUp=True)
+        self.data.gameData()
+    
     # def test_homeStatistics(self, driver):
     #     self.data.gameReport(driver, homeStatistics=True)
     #     self.data.gameData()

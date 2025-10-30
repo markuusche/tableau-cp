@@ -6,7 +6,6 @@ from src.utils.tools import Tools
 @pytest.fixture(scope="session")
 def driver():
     #setup
-    URL = Helpers()
     user = Tools()
     option = webdriver.ChromeOptions()
     option.add_argument("--headless")
@@ -29,7 +28,7 @@ def driver():
         })
     driver = webdriver.Chrome(options=option)
     driver.maximize_window()
-    driver.get(URL.env('main'))
+    driver.get(Helpers.env('main'))
     user.userLogin(driver)
 
     yield driver

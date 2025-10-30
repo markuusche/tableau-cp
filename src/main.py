@@ -108,6 +108,15 @@ class Tableau(Utils, Tools):
         if options.get("otherPromo"):
             getCSV(self.env("otherPromo"))
             
+        if options.get("popUp"):
+            keys = self.env("advertisement", True)
+            for key in keys:
+                driver.get(self.env("popUp") + key)
+                self._iframe(driver)
+                self.download(driver)
+
+            self.moveFiles(popUp=True)
+            
         if options.get("homeStatistics"):
             scenes = self.env("scenes", True)
             for scene in scenes:
@@ -164,7 +173,7 @@ class Tableau(Utils, Tools):
 
                 if not file.exists():
                     continue
-                
+
                 skip_rows = 1 if any(self.env(key) in nameFilter for key in self.env("skipRowsKeys", True)) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
                     reader = csv.reader(csvfile, delimiter='\t')
@@ -212,6 +221,9 @@ class Tableau(Utils, Tools):
                             case _ if nameFilter == self.env("rp"):
                                 recentPlaySort = sorted(temp, key=lambda row: int(row[4].replace(',', '')), reverse=True)[:20]
                                 self.sheet.populateSheet(self.env("t20"), 'A2', recentPlaySort, popular=True)
+                                
+                            case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
+                                self.sheet.populateSheet(self.env("pup"), 'A2', temp, event=True)
                             
                             case _ if self.env("hp") in nameFilter:
                                 if run:
@@ -240,7 +252,8 @@ class Tableau(Utils, Tools):
         dataList("stats", "week_stats", month_or_week)
         dataList("promo", "week_stats", self.env('promo_weekly', True))
         dataList("home_stats", "stats", self.env("homeStatsFiles", True))
-        dataList("email_verification", "stats", self.env("emailFileData", True))
+        # dataList("email_verification", "stats", self.env("emailFileData", True))
+        dataList("popUp", "stats", self.env("popUpNames", True))
 
         self.clearFolders()
     

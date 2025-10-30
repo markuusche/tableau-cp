@@ -82,7 +82,7 @@ class Utils(Helpers):
         
         downloads = os.path.expanduser("~/Downloads")
         folder = lambda folder: os.path.join(downloads, folder)
-        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification"]
+        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification", "popUp"]
 
         path = {}
         for item in labels:
@@ -133,6 +133,8 @@ class Utils(Helpers):
                     destination = movePath("pages")
                 elif options.get("promo"):
                     destination = movePath("promo")
+                elif options.get("popUp"):
+                    destination = movePath("popUp")
                 elif options.get("homeStatistics"):
                     destination = movePath("home_stats")
                 elif options.get("emailVerification"):
@@ -160,6 +162,7 @@ class Utils(Helpers):
             'stats_week_names': os.path.join(base_downloads, "stats"),
             'games_week_names': os.path.join(base_downloads, "games"),
             'promo_week_names': os.path.join(base_downloads, "promo"),
+            'popUps': os.path.join(base_downloads, "popUp"),
         }
 
         def rename(folder, old_name, new_name) -> None:
