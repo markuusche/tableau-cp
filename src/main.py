@@ -212,7 +212,7 @@ class Tableau(Utils, Tools):
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
                                 cell = self.sheet.getCellValue(sheetName=nameFilter, event=True) != temp[0][0]
                                 if cell:
-                                    sorted_data = self.sortIndexDesc(temp, f"{info["sunday"]}")
+                                    sorted_data = self.sortIndexDesc(data=temp)
                                     self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
                             
                             case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
