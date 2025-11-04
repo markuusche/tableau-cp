@@ -235,6 +235,7 @@ class Tableau(Utils, Tools):
                                 from datetime import datetime
                                 sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"))
                                 self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True, singleData=True)
+
                             case _:
                                 cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
                                 if cell:
