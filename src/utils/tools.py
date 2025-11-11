@@ -41,14 +41,14 @@ class Tools(Helpers):
                 continue
 
     # switch to iframe    
-    def _iframe(self, driver) -> None:
+    def _iframe(self, driver, selector: str = 'data') -> None:
         iframe = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe"))
         )
         driver.switch_to.frame(iframe)
 
         try:
-            self.wait_element(driver, 'table', 'data', timeout=60)
+            self.wait_element(driver, 'table', selector, timeout=60)
         except:
             pass
 
@@ -72,7 +72,7 @@ class Tools(Helpers):
             pass
 
     # download data page
-    def download(self, driver, data: bool = False) -> None:
+    def download(self, driver, data: bool = False, dataIndex: bool = False) -> None:
         
         driver.execute_script("return document.readyState") == "complete"
         self.wait_element(driver, 'table', 'download-btn', timeout=10)
@@ -105,6 +105,9 @@ class Tools(Helpers):
                         break
                     except:
                         continue
+                    
+            if dataIndex:
+                self.search_element(driver, 'table' , 'dataIndex', click=True)
             
             while True:
                 try:

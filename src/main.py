@@ -65,10 +65,10 @@ class Tableau(Utils, Tools):
         Downloads the data in the web
         """
         
-        def getCSV(url: str):
+        def getCSV(url: str, dataIndex: bool = False, selector: str = 'data'):
             driver.get(url)
-            self._iframe(driver)
-            self.download(driver)
+            self._iframe(driver, selector=selector)
+            self.download(driver, dataIndex=dataIndex)
             self.moveFiles(gameEvent=True)
 
         info = self.getWeekInfo()
@@ -99,15 +99,14 @@ class Tableau(Utils, Tools):
                     else:
                         self.moveFiles(game=True)
                         
-        if options.get("miniBanner"):
-           getCSV(self.env("minban"))
-
-        if options.get("promo"):
-            getCSV(self.env("promo"))
+        os_envs = ['miniBanner', 'promo', 'otherPromo', 'recentPlay', 'dataIndex']
+        for env in os_envs:
+            if options.get(env):
+                if env == 'dataIndex':
+                    getCSV(self.env(env) + info['sunday'], dataIndex=True, selector='index table')
+                else:
+                    getCSV(self.env(env))
         
-        if options.get("otherPromo"):
-            getCSV(self.env("otherPromo"))
-            
         if options.get("popUp"):
             keys = self.env("advertisement", True)
             for key in keys:
@@ -123,7 +122,7 @@ class Tableau(Utils, Tools):
                 driver.get(self.env("rawSliders") + f"User Type={scene}")
                 self._iframe(driver)
                 self.wait_element(driver, 'table', 'tab')
-                self.download(driver, True)
+                self.download(driver, data=True)
 
             self.moveFiles(homeStatistics=True)
         
@@ -140,10 +139,7 @@ class Tableau(Utils, Tools):
                 self.download(driver)
                 
             self.moveFiles(emailVerification=True)
-            
-        if options.get("recentPlay"):
-            getCSV(self.env("recentPlay"))
-
+    
         self.moveFiles()
 
     def gameData(self, month: bool = False) -> None:
@@ -235,6 +231,12 @@ class Tableau(Utils, Tools):
                                 from datetime import datetime
                                 sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"))
                                 self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True, singleData=True)
+                                
+                            case _ if self.env("indx") in nameFilter:
+                                temp.pop(0)
+                                for item in temp:
+                                    item.insert(0, info["sunday"])
+                                self.sheet.populateSheet(nameFilter, 'A2', temp, dataIndex=True)
 
                             case _:
                                 cell = self.sheet.getCellValue(nameFilter) != temp[0][0]

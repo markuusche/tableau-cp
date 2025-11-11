@@ -51,6 +51,10 @@ class Test:
     def test_recentPlay(self, driver):
         self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
+    
+    def test_dataIndex(self, driver):
+        self.data.gameReport(driver, dataIndex=True)
+        self.data.gameData()
         
     def test_monthly(self, driver):
         if len(self.info.getWeekInfo()["last_month_dates"]) != 0:

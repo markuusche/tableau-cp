@@ -57,6 +57,8 @@ class GoogleSheet:
             Id = helper.env("evsheet")
         elif options.get("popular"):
             Id = helper.env("popularCompleteData")
+        elif options.get("dataIndex"):
+            Id = helper.env('dataIndicator')
         else:
             Id = helper.env('sheetId')
             
