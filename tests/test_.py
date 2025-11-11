@@ -4,7 +4,7 @@
 # =============================== © 2025 - markuusche =================================
 # =====================================================================================
 
-import pytest, merged
+import pytest, mergedData
 from src.main import Tableau
 from src.utils.utils import Utils
 
@@ -46,7 +46,7 @@ class Test:
     #     self.data.gameData()
     
     def test_merged_popularData(self):
-        merged.mergedData()
+        mergedData.mergedData()
         
     def test_recentPlay(self, driver):
         self.data.gameReport(driver, recentPlay=True)
