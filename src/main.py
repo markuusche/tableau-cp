@@ -131,12 +131,11 @@ class Tableau(Utils, Tools):
             self._iframe(driver)
             self.download(driver)
             
-            for tab in ["tab-1", "tab-2"]:
-                self.wait_element(driver, "table", tab)
-                self.search_element(driver, "table", tab, click=True)
-                self.wait_element(driver, "table", "data")
-                driver.execute_script("location.reload()")
-                self.download(driver)
+            self.wait_element(driver, "table", "tab-2")
+            self.search_element(driver, "table", "tab-2", click=True)
+            self.wait_element(driver, "table", "data")
+            driver.execute_script("location.reload()")
+            self.download(driver)
                 
             self.moveFiles(emailVerification=True)
     
@@ -151,7 +150,7 @@ class Tableau(Utils, Tools):
         self.modifyFiles(month)
         
         # data fetch/filtering
-        def dataList(mode, stats: str, theFiles):
+        def dataList(mode, stats: str, theFiles, em: bool = False):
             target = Path.home() / f"Downloads/{mode}"
             info = self.getWeekInfo()
             scenes = self.env("scenes", True)
@@ -172,21 +171,40 @@ class Tableau(Utils, Tools):
 
                 skip_rows = 1 if any(self.env(key) in nameFilter for key in self.env("skipRowsKeys", True)) else 2
                 with open(file, newline='', encoding='utf-16') as csvfile:
-                    reader = csv.reader(csvfile, delimiter='\t')
-                    for i, row in enumerate(reader): 
-                        
-                        if i == 0 or not row: 
-                            continue
-                        
-                        if scene is not None and self.env("hp") in nameFilter:
-                            row.insert(8, scene)
-
-                        if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in self.env("nameFilterKeys", True)):
-                            temp.append(row)
-                        else:
-                            if i < skip_rows:
+                    if not em:
+                        reader = csv.reader(csvfile, delimiter='\t')
+                        for i, row in enumerate(reader): 
+                            
+                            if i == 0 or not row: 
                                 continue
-                            temp.append(row[skip_rows:])
+                            
+                            if scene is not None and self.env("hp") in nameFilter:
+                                row.insert(8, scene)
+
+                            if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in self.env("nameFilterKeys", True)):
+                                temp.append(row)
+                            else:
+                                if i < skip_rows:
+                                    continue
+                                temp.append(row[skip_rows:])
+                    else:
+                        reader = csv.DictReader(csvfile, delimiter='\t')
+                        headers = reader.fieldnames
+                        cols = self.env('cols', True)
+
+                        rows = list(reader)
+                        rows = rows[1:] if len(rows) > 1 else []
+
+                        data = [] 
+
+                        for column in cols:
+                            if column in headers:
+                                col_data = [row.get(column, '').strip() for row in rows]
+                                data.extend(col_data)
+                            else:
+                                data.append('')
+                                
+                        temp = [data]
 
                 def insertDates(temp, data, data2):
                     for date in temp:
@@ -227,10 +245,8 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
                                 run = False
                                 
-                            case _ if any(self.env(key) in nameFilter.strip() for key in ["tab", "tab1", "tab2"]):
-                                from datetime import datetime
-                                sortDate = sorted(temp, key=lambda x: datetime.strptime(x[0], "%Y-%m-%d"))
-                                self.sheet.populateSheet(nameFilter, 'A2', sortDate, emailVerification=True, singleData=True)
+                            case _ if any(self.env(key) in nameFilter.strip() for key in ["tab1", "tab2"]):
+                                self.sheet.populateSheet(nameFilter, 'A2', temp, emailVerification=True, singleData=True)
                                 
                             case _ if self.env("indx") in nameFilter:
                                 temp.pop(0)
@@ -255,7 +271,7 @@ class Tableau(Utils, Tools):
         dataList("stats", "week_stats", month_or_week)
         dataList("promo", "week_stats", self.env('promo_weekly', True))
         dataList("home_stats", "stats", self.env("homeStatsFiles", True))
-        # dataList("email_verification", "stats", self.env("emailFileData", True))
+        dataList("email_verification", "stats", self.env("emailFileData", True), em=True)
         dataList("popUp", "stats", self.env("popUpNames", True))
 
         self.clearFolders()

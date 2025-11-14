@@ -41,9 +41,9 @@ class Test:
     #     self.data.gameReport(driver, homeStatistics=True)
     #     self.data.gameData()
     
-    # def test_emailVerification(self, driver):
-    #     self.data.gameReport(driver, emailVerification=True)
-    #     self.data.gameData()
+    def test_emailVerification(self, driver):
+        self.data.gameReport(driver, emailVerification=True)
+        self.data.gameData()
     
     def test_merged_popularData(self):
         mergedData.mergedData()
