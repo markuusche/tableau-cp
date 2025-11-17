@@ -250,9 +250,12 @@ class Tableau(Utils, Tools):
                                 
                             case _ if self.env("indx") in nameFilter:
                                 temp.pop(0)
+                                raw = []
                                 for item in temp:
-                                    item.insert(0, info["sunday"])
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, dataIndex=True)
+                                    raw.append(item[1])
+                                raw.insert(0, info["sunday"])
+                                data = [raw]
+                                self.sheet.populateSheet(nameFilter, 'A2', data, dataIndex=True)
 
                             case _:
                                 cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
