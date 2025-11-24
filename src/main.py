@@ -10,7 +10,6 @@ from pathlib import Path
 from itertools import zip_longest
 from src.utils.utils import Utils
 from src.utils.tools import Tools
-from datetime import date, timedelta
 from src.api.sheet import GoogleSheet
 from selenium.webdriver.common.keys import Keys
 
