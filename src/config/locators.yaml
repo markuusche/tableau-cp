@@ -10,6 +10,7 @@ dashboard:
 table:
   main:                                        ".tab-clip > div:nth-child(6)"
   download-btn:                                "button#download"
+  processing:                                  "div#CancelDialog-Dialog-Body-Id .cancelContainer"
   iframe:                                      "iframe[title]"
   category:                                    "#tab-dashboard-region > div:nth-child(8) .tabComboBoxNameContainer span"
   export:                                      "#viz-viewer-toolbar > div:last-child #download"

@@ -75,6 +75,7 @@ class Tools(Helpers):
     def download(self, driver, data: bool = False, dataIndex: bool = False) -> None:
         
         driver.execute_script("return document.readyState") == "complete"
+        self.wait_element_invisibility(driver, 'table', 'processing', timeout=60)
         self.wait_element(driver, 'table', 'download-btn', timeout=10)
         driver.execute_script('document.querySelector("#viz-viewer-toolbar > div:last-child #download").click();')
         self.wait_element(driver, 'table', 'download', timeout=10)
