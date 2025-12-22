@@ -115,6 +115,12 @@ class Tableau(Utils, Tools):
 
             self.moveFiles(popUp=True)
             
+        if options.get("pacMan"):
+            driver.get(self.env("pac"))
+            self._iframe(driver)
+            self.download(driver)
+            self.moveFiles(pacMan=True)
+            
         if options.get("homeStatistics"):
             scenes = self.env("scenes", True)
             for scene in scenes:
@@ -132,7 +138,7 @@ class Tableau(Utils, Tools):
             
             self.wait_element(driver, "table", "tab-2")
             self.search_element(driver, "table", "tab-2", click=True)
-            self.wait_element(driver, "table", "data")
+            self.wait_element(driver, "table", "data", timeout=180)
             driver.execute_script("location.reload()")
             self.download(driver)
                 
@@ -237,12 +243,15 @@ class Tableau(Utils, Tools):
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
                                 self.sheet.populateSheet(self.env("pup"), 'A2', temp, event=True)
-                            
-                            case _ if self.env("hp") in nameFilter:
-                                if run:
-                                    self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
-                                self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
-                                run = False
+                                                            
+                            case _ if nameFilter == self.env("pacs"):
+                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                        
+                            # case _ if self.env("hp") in nameFilter:
+                            #     if run:
+                            #         self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
+                            #     self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
+                            #     run = False
                                 
                             case _ if any(self.env(key) in nameFilter.strip() for key in ["tab1", "tab2"]):
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, emailVerification=True, singleData=True)
@@ -275,6 +284,7 @@ class Tableau(Utils, Tools):
         dataList("home_stats", "stats", self.env("homeStatsFiles", True))
         dataList("email_verification", "stats", self.env("emailFileData", True), em=True)
         dataList("popUp", "stats", self.env("popUpNames", True))
+        dataList("pacMan", "stats", self.env("pacNames", True))
 
         self.clearFolders()
     
