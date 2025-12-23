@@ -341,7 +341,7 @@ class Utils(Helpers):
     def clearFolders(self) -> None:
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification", "popUp"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification", "popUp", "pacMan"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)
