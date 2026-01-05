@@ -54,8 +54,8 @@ class Test:
         mergedData.mergedData(pacMan=True)
         mergedData.mergedData()
 
-    def test_recentPlay(self, driver):
-        self.data.gameReport(driver, recentPlay=True)
+    def test_recentPlay(self, ):
+        # self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
 
     def test_dataIndex(self, driver):

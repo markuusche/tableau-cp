@@ -15,15 +15,15 @@ class Utils(Helpers):
         return file
     
     @staticmethod
-    def sortIndexDesc(data: list, date: str | None = None) -> list[list]:
+    def sortIndexDesc(data: list, idx: int = 4, date: str | None = None) -> list[list]:
         for row in data:
             if date:
                 row.insert(0, date)
-            row[4] = row[4].replace(",", "")
+            row[idx] = row[idx].replace(",", "")
         
-        sorted_data = sorted(data, key=lambda index: int(index[4]), reverse=True)
+        sorted_data = sorted(data, key=lambda index: int(index[idx]), reverse=True)
         for sort in sorted_data:
-            sort[4] = f"{int(sort[4]):,}"
+            sort[idx] = f"{int(sort[idx]):,}"
         
         return sorted_data
     
@@ -314,7 +314,7 @@ class Utils(Helpers):
         
         # popular sorting
         from collections import defaultdict
-        sorted_data = self.sortIndexDesc(popular)
+        sorted_data = self.sortIndexDesc(popular, idx=5)
         
         #others sorting
         grouped = defaultdict(list)
@@ -326,7 +326,7 @@ class Utils(Helpers):
         for category, rows in grouped.items():
             sorted_rows = sorted(
                 rows,
-                key=lambda x: int(x[4].replace(",", "")),
+                key=lambda x: int(x[5].replace(",", "")),
                 reverse=True
             )
             sorted_result.extend(sorted_rows)

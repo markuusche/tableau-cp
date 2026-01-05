@@ -238,7 +238,7 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                                 
                             case _ if nameFilter == self.env("rp"):
-                                recentPlaySort = sorted(temp, key=lambda row: int(row[4].replace(',', '')), reverse=True)[:20]
+                                recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)[:20]
                                 self.sheet.populateSheet(self.env("t20"), 'A2', recentPlaySort, popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
@@ -286,7 +286,7 @@ class Tableau(Utils, Tools):
         dataList("popUp", "stats", self.env("popUpNames", True))
         dataList("pacMan", "stats", self.env("pacNames", True))
 
-        self.clearFolders()
+        # self.clearFolders()
     
     def homePage(self, driver) -> None:
         """
