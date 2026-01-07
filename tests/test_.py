@@ -21,7 +21,7 @@ class Test:
         self.data.gameReport(driver, page=True)
         self.data.gameData()
 
-    def test_page(self, driver):
+    def test_popular(self, driver):
         self.data.homePage(driver)
 
     def test_promo(self, driver):
@@ -51,11 +51,12 @@ class Test:
 
     def test_merged_popularData(self):
         mergedData.mergedData(popular=True)
+        mergedData.mergedData(manual=True)
         mergedData.mergedData(pacMan=True)
         mergedData.mergedData()
 
-    def test_recentPlay(self, ):
-        # self.data.gameReport(driver, recentPlay=True)
+    def test_recentPlay(self, driver):
+        self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
 
     def test_dataIndex(self, driver):

@@ -239,13 +239,16 @@ class Tableau(Utils, Tools):
                                 
                             case _ if nameFilter == self.env("rp"):
                                 recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)[:20]
-                                self.sheet.populateSheet(self.env("t20"), 'A2', recentPlaySort, popular=True)
+                                total = [item for item in recentPlaySort if "Total" in item]   
+                                self.sheet.populateSheet(self.env("t20"), 'A2', total, popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
                                 self.sheet.populateSheet(self.env("pup"), 'A2', temp, event=True)
                                                             
                             case _ if nameFilter == self.env("pacs"):
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                pac = [item for item in temp if "Total" in item]   
+                                self.sheet.populateSheet(nameFilter, 'A2', pac, event=True)
+                                self.sheet.populateSheet(self.env("pactotal"), 'A2', pac, popular=True)
                         
                             # case _ if self.env("hp") in nameFilter:
                             #     if run:
@@ -286,7 +289,7 @@ class Tableau(Utils, Tools):
         dataList("popUp", "stats", self.env("popUpNames", True))
         dataList("pacMan", "stats", self.env("pacNames", True))
 
-        # self.clearFolders()
+        self.clearFolders()
     
     def homePage(self, driver) -> None:
         """
@@ -297,10 +300,12 @@ class Tableau(Utils, Tools):
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
-        popular, others = self.pageData()
+        popular, others, qrqm, manual = self.pageData()
         check = self.sheet.getCellValue(self.env("pop"), event=True) != popular[0][0]
         if check:
             self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
             self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
-
+            self.sheet.populateSheet("Popular Game (Complete Data Qrqm)", 'A2', qrqm, popular=True)
+            self.sheet.populateSheet("Popular Game (Complete Data Manual)", 'A2', manual, popular=True)
+        
         self.clearFolders()

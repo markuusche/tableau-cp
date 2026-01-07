@@ -61,13 +61,14 @@ class GoogleSheet:
             Id = helper.env('dataIndicator')
         else:
             Id = helper.env('sheetId')
-            
+        
         if options.get("singleData"):
+                dataOption = "OVERWRITE" if options.get("popular") else "INSERT_ROWS"
                 self.sheet.values().append(
                 spreadsheetId=Id,
                 range=f"{sheetName}!{cell}",
                 valueInputOption='RAW',
-                insertDataOption='INSERT_ROWS',
+                insertDataOption=dataOption,
                 body={"values": values}
             ).execute()
         else:

@@ -2,6 +2,7 @@ import getpass
 import pandas as pd
 from zoneinfo import ZoneInfo
 import os, re, shutil, ast, glob
+from collections import defaultdict
 from datetime import datetime, timedelta
 from src.helpers.helper import Helpers
 
@@ -311,10 +312,29 @@ class Utils(Helpers):
         
             popular.extend(k[4])
             others.extend(k[5])
+            
+        def sortDecs(data):
+            sorted_data = sorted(
+                data,
+                key=lambda x: int(x[5].replace(",", "")),
+                reverse=True
+            )[:15]
+
+            grouped = defaultdict(list)
+            for row in others:
+                provider = row[1]
+                grouped[provider].append(row)
+    
+            return sorted_data
         
-        # popular sorting
-        from collections import defaultdict
-        sorted_data = self.sortIndexDesc(popular, idx=5)
+        metric_manual = [row for row in popular if "Manual" in row]
+        metric_qrqm = [row for row in popular if "Qrqm Strategy" in row]
+        popular = [row for row in popular if "Total" in row]
+        others  = [row for row in others  if "Total" in row]
+
+        sorted_data = sortDecs(popular)
+        manual_data = sortDecs(metric_manual)
+        qrqm_data = sortDecs(metric_qrqm)
         
         #others sorting
         grouped = defaultdict(list)
@@ -328,14 +348,14 @@ class Utils(Helpers):
                 rows,
                 key=lambda x: int(x[5].replace(",", "")),
                 reverse=True
-            )
+            )[:15]
             sorted_result.extend(sorted_rows)
 
         others = []
         for row in sorted_result:
             others.append(row)
         
-        return sorted_data, others
+        return sorted_data, others, qrqm_data, manual_data
 
     # delete daily/weekly folder
     def clearFolders(self) -> None:
