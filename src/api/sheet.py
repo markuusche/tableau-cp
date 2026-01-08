@@ -51,8 +51,6 @@ class GoogleSheet:
         
         if options.get("event"):
             Id = helper.env('evtrckId')
-        elif options.get("homeStats"):
-            Id = helper.env('homeStats')
         elif options.get("emailVerification"):
             Id = helper.env("evsheet")
         elif options.get("popular"):

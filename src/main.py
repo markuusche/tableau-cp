@@ -120,16 +120,6 @@ class Tableau(Utils, Tools):
             self._iframe(driver)
             self.download(driver)
             self.moveFiles(pacMan=True)
-            
-        if options.get("homeStatistics"):
-            scenes = self.env("scenes", True)
-            for scene in scenes:
-                driver.get(self.env("rawSliders") + f"User Type={scene}")
-                self._iframe(driver)
-                self.wait_element(driver, 'table', 'tab')
-                self.download(driver, data=True)
-
-            self.moveFiles(homeStatistics=True)
         
         if options.get("emailVerification"):
             driver.get(self.env("em") + info["sunday"])
@@ -158,9 +148,8 @@ class Tableau(Utils, Tools):
         def dataList(mode, stats: str, theFiles, em: bool = False):
             target = Path.home() / f"Downloads/{mode}"
             info = self.getWeekInfo()
-            scenes = self.env("scenes", True)
-            run = True
-            for name, scene in zip_longest(theFiles, scenes[::-1]):
+
+            for name in theFiles:
 
                 temp = []
 
@@ -183,9 +172,6 @@ class Tableau(Utils, Tools):
                             if i == 0 or not row: 
                                 continue
                             
-                            if scene is not None and self.env("hp") in nameFilter:
-                                row.insert(8, scene)
-
                             if nameFilter == self.env("mban") or any(self.env(key) in nameFilter for key in self.env("nameFilterKeys", True)):
                                 temp.append(row)
                             else:
@@ -249,12 +235,6 @@ class Tableau(Utils, Tools):
                                 pac = [item for item in temp if "Total" in item]   
                                 self.sheet.populateSheet(nameFilter, 'A2', pac, event=True)
                                 self.sheet.populateSheet(self.env("pactotal"), 'A2', pac, popular=True)
-                        
-                            # case _ if self.env("hp") in nameFilter:
-                            #     if run:
-                            #         self.sheet.clearDeleteSheet(self.env("homeStats"), 'Raw Data')
-                            #     self.sheet.populateSheet('Raw Data', 'A2', temp, homeStats=True)
-                            #     run = False
                                 
                             case _ if any(self.env(key) in nameFilter.strip() for key in ["tab1", "tab2"]):
                                 self.sheet.populateSheet(nameFilter, 'A2', temp, emailVerification=True, singleData=True)
@@ -284,7 +264,6 @@ class Tableau(Utils, Tools):
         dataList("games", "game_stats", self.env("weekly_games_files", True))
         dataList("stats", "week_stats", month_or_week)
         dataList("promo", "week_stats", self.env('promo_weekly', True))
-        dataList("home_stats", "stats", self.env("homeStatsFiles", True))
         dataList("email_verification", "stats", self.env("emailFileData", True), em=True)
         dataList("popUp", "stats", self.env("popUpNames", True))
         dataList("pacMan", "stats", self.env("pacNames", True))

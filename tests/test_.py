@@ -37,10 +37,6 @@ class Test:
         self.data.gameReport(driver, popUp=True)
         self.data.gameData()
 
-    # def test_homeStatistics(self, driver):
-    #     self.data.gameReport(driver, homeStatistics=True)
-    #     self.data.gameData()
-
     def test_emailVerification(self, driver):
         self.data.gameReport(driver, emailVerification=True)
         self.data.gameData()

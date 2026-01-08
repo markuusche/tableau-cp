@@ -83,7 +83,7 @@ class Utils(Helpers):
         
         downloads = os.path.expanduser("~/Downloads")
         folder = lambda folder: os.path.join(downloads, folder)
-        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification", "popUp", "pacMan"]
+        labels = ["daily", "weekly", "stats", "games", "pages", "promo", "email_verification", "popUp", "pacMan"]
 
         path = {}
         for item in labels:
@@ -137,8 +137,6 @@ class Utils(Helpers):
                     destination = movePath("promo")
                 elif options.get("popUp"):
                     destination = movePath("popUp")
-                elif options.get("homeStatistics"):
-                    destination = movePath("home_stats")
                 elif options.get("emailVerification"):
                     destination = movePath("email_verification")
                 elif options.get("pacMan"):
@@ -361,7 +359,7 @@ class Utils(Helpers):
     def clearFolders(self) -> None:
         user = getpass.getuser()
         downloads = f"/Users/{user}/Downloads"
-        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "home_stats", "email_verification", "popUp", "pacMan"]
+        folders_names = ["daily", "weekly", "stats", "games", "pages", "promo", "email_verification", "popUp", "pacMan"]
 
         for folder in folders_names:
             folders = os.path.join(downloads, folder)
