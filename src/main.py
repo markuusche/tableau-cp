@@ -7,7 +7,6 @@
 import csv, os
 from time import sleep
 from pathlib import Path
-from itertools import zip_longest
 from src.utils.utils import Utils
 from src.utils.tools import Tools
 from src.api.sheet import GoogleSheet
@@ -197,10 +196,6 @@ class Tableau(Utils, Tools):
                                 
                         temp = [data]
 
-                def insertDates(temp, data, data2):
-                    for date in temp:
-                        date[0] = f"{data} - {data2}"
-                        
                 if not month:
                     date = f"{info["monday"]} - {info["sunday"]}"
                     if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
@@ -210,18 +205,20 @@ class Tableau(Utils, Tools):
                             self.sheet.populateSheet(env, 'A2', data, event=True)
                             break
                         else:
-                            insertDates(temp, info["monday"], info["sunday"])
-                            self.sheet.populateSheet(nameFilter, 'A2', temp)
+                            temp_data = [[f"{info["monday"]} - {info["sunday"]}"] + idx[1:] for idx in temp]
+                            self.sheet.populateSheet(nameFilter, 'A2', temp_data)
                     else:
                          match nameFilter:
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
-                                cell = self.sheet.getCellValue(sheetName=nameFilter, event=True) != temp[0][0]
+                                cell = self.sheet.getCellValue(nameFilter, event=True) != temp[0][0]
                                 if cell:
                                     sorted_data = self.sortIndexDesc(data=temp)
                                     self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
                             
                             case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                cell = self.sheet.getCellValue(nameFilter, event=True) != temp[0][0]
+                                if cell:
+                                    self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                                 
                             case _ if nameFilter == self.env("rp"):
                                 recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)[:20]
@@ -255,8 +252,8 @@ class Tableau(Utils, Tools):
                 else:
                     sheet_names = nameFilter + " (Monthly)"
                     dates = info["last_month_dates"]
-                    insertDates(temp, min(dates), max(dates))
-                    self.sheet.populateSheet(sheet_names, 'A2', temp)
+                    temp_data = [[f"{min(dates)} - {max(dates)}"] + idx[1:] for idx in temp]
+                    self.sheet.populateSheet(sheet_names, 'A2', temp_data)
 
         month_or_week = self.env('wkstat', True) if month else self.env('weekly_stats_files', True)
         dataList("daily", "stats", self.env("files", True))
@@ -274,17 +271,19 @@ class Tableau(Utils, Tools):
         """
         Gets the Home & Games data separated from main data fetching
         """
-
-        driver.get(self.env("classification"))
+        info = self.getWeekInfo()
+        driver.get(self.env("classification") + info["sunday"])
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
         popular, others, qrqm, manual = self.pageData()
         check = self.sheet.getCellValue(self.env("pop"), event=True) != popular[0][0]
+        pinoy = [row for row in others if self.env("pnyslts") in row]
         if check:
             self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
             self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
-            self.sheet.populateSheet("Popular Game (Complete Data Qrqm)", 'A2', qrqm, popular=True)
-            self.sheet.populateSheet("Popular Game (Complete Data Manual)", 'A2', manual, popular=True)
+            self.sheet.populateSheet(self.env("qrqm"), 'A2', qrqm, popular=True)
+            self.sheet.populateSheet(self.env("manual"), 'A2', manual, popular=True)
+            self.sheet.populateSheet(self.env("pny"), 'A2', pinoy, popular=True)
         
         self.clearFolders()
