@@ -44,7 +44,7 @@ class GoogleSheet:
             }
         ]
 
-    def populateSheet(self, sheetName: str, cell: str, values: list, **options):
+    def populateSheet(self, sheetName: str, values: list, cell: str = "A2", **options):
         """
         Populates sheet in single request, instead of 1 by 1
         """

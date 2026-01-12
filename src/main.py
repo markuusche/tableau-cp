@@ -202,35 +202,35 @@ class Tableau(Utils, Tools):
                         if "Home (" in nameFilter or "Games (" in nameFilter:
                             data = self.sumEventGeneric(mode, date, nameFilter, key_cols=[2, 3], val_cols=[4, 5])
                             env = self.env("st_weekly") if "Home (" in nameFilter else self.env("sg_weekly")
-                            self.sheet.populateSheet(env, 'A2', data, event=True)
+                            self.sheet.populateSheet(env, data, event=True)
                             break
                         else:
-                            temp_data = [[f"{info["monday"]} - {info["sunday"]}"] + idx[1:] for idx in temp]
-                            self.sheet.populateSheet(nameFilter, 'A2', temp_data)
+                            temp_data = [[date] + idx[1:] for idx in temp]
+                            self.sheet.populateSheet(nameFilter, temp_data)
                     else:
                          match nameFilter:
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
                                 sorted_data = self.sortIndexDesc(data=temp)
-                                self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
+                                self.sheet.populateSheet(nameFilter, sorted_data, event=True)
                             
                             case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                self.sheet.populateSheet(nameFilter, temp, event=True)
                                 
                             case _ if nameFilter == self.env("rp"):
                                 recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)
                                 total = [item for item in recentPlaySort if "Total" in item]   
-                                self.sheet.populateSheet(self.env("t20"), 'A2', total[:20], popular=True)
+                                self.sheet.populateSheet(self.env("t20"), total[:20], popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
-                                self.sheet.populateSheet(self.env("pup"), 'A2', temp, event=True)
+                                self.sheet.populateSheet(self.env("pup"), temp, event=True)
                                                             
                             case _ if nameFilter == self.env("pacs"):
                                 pac = [item for item in temp if "Total" in item]   
-                                self.sheet.populateSheet(nameFilter, 'A2', pac, event=True)
-                                self.sheet.populateSheet(self.env("pactotal"), 'A2', pac, popular=True)
+                                self.sheet.populateSheet(nameFilter, pac, event=True)
+                                self.sheet.populateSheet(self.env("pactotal"), pac, popular=True)
                                 
                             case _ if any(self.env(key) in nameFilter.strip() for key in ["tab1", "tab2"]):
-                                self.sheet.populateSheet(nameFilter, 'A2', temp, emailVerification=True, singleData=True)
+                                self.sheet.populateSheet(nameFilter, temp, emailVerification=True, singleData=True)
                                 
                             case _ if self.env("indx") in nameFilter:
                                 temp.pop(0)
@@ -239,15 +239,15 @@ class Tableau(Utils, Tools):
                                     raw.append(item[1])
                                 raw.insert(0, info["sunday"])
                                 data = [raw]
-                                self.sheet.populateSheet(nameFilter, 'A2', data, dataIndex=True)
+                                self.sheet.populateSheet(nameFilter, data, dataIndex=True)
 
                             case _:
-                                self.sheet.populateSheet(nameFilter, 'A2', temp)
+                                self.sheet.populateSheet(nameFilter, temp)
                 else:
                     sheet_names = nameFilter + " (Monthly)"
                     dates = info["last_month_dates"]
                     temp_data = [[f"{min(dates)} - {max(dates)}"] + idx[1:] for idx in temp]
-                    self.sheet.populateSheet(sheet_names, 'A2', temp_data)
+                    self.sheet.populateSheet(sheet_names, temp_data)
 
         month_or_week = self.env('wkstat', True) if month else self.env('weekly_stats_files', True)
         dataList("daily", "stats", self.env("files", True))
@@ -272,10 +272,10 @@ class Tableau(Utils, Tools):
         self.moveFiles(page=True)
         popular, others, qrqm, manual = self.pageData()
         pinoy = [row for row in others if self.env("pnyslts") in row]
-        self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
-        self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
-        self.sheet.populateSheet(self.env("qrqm"), 'A2', qrqm, popular=True)
-        self.sheet.populateSheet(self.env("manual"), 'A2', manual, popular=True)
-        self.sheet.populateSheet(self.env("pny"), 'A2', pinoy, popular=True)
+        self.sheet.populateSheet(self.env("pop"), popular, event=True)
+        self.sheet.populateSheet(self.env("cats"), others, event=True)
+        self.sheet.populateSheet(self.env("qrqm"), qrqm, popular=True)
+        self.sheet.populateSheet(self.env("manual"), manual, popular=True)
+        self.sheet.populateSheet(self.env("pny"), pinoy, popular=True)
         
         self.clearFolders()
