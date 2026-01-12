@@ -210,20 +210,16 @@ class Tableau(Utils, Tools):
                     else:
                          match nameFilter:
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
-                                cell = self.sheet.getCellValue(nameFilter, event=True) != temp[0][0]
-                                if cell:
-                                    sorted_data = self.sortIndexDesc(data=temp)
-                                    self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
+                                sorted_data = self.sortIndexDesc(data=temp)
+                                self.sheet.populateSheet(nameFilter, 'A2', sorted_data, event=True)
                             
                             case _ if nameFilter in [self.env("pts"), self.env("opt"), self.env("mban")]:
-                                cell = self.sheet.getCellValue(nameFilter, event=True) != temp[0][0]
-                                if cell:
-                                    self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
+                                self.sheet.populateSheet(nameFilter, 'A2', temp, event=True)
                                 
                             case _ if nameFilter == self.env("rp"):
-                                recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)[:20]
+                                recentPlaySort = sorted(temp, key=lambda row: int(row[5].replace(',', '')), reverse=True)
                                 total = [item for item in recentPlaySort if "Total" in item]   
-                                self.sheet.populateSheet(self.env("t20"), 'A2', total, popular=True)
+                                self.sheet.populateSheet(self.env("t20"), 'A2', total[:20], popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
                                 self.sheet.populateSheet(self.env("pup"), 'A2', temp, event=True)
@@ -246,9 +242,7 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(nameFilter, 'A2', data, dataIndex=True)
 
                             case _:
-                                cell = self.sheet.getCellValue(nameFilter) != temp[0][0]
-                                if cell:
-                                    self.sheet.populateSheet(nameFilter, 'A2', temp)
+                                self.sheet.populateSheet(nameFilter, 'A2', temp)
                 else:
                     sheet_names = nameFilter + " (Monthly)"
                     dates = info["last_month_dates"]
@@ -277,13 +271,11 @@ class Tableau(Utils, Tools):
         self.download(driver)
         self.moveFiles(page=True)
         popular, others, qrqm, manual = self.pageData()
-        check = self.sheet.getCellValue(self.env("pop"), event=True) != popular[0][0]
         pinoy = [row for row in others if self.env("pnyslts") in row]
-        if check:
-            self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
-            self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
-            self.sheet.populateSheet(self.env("qrqm"), 'A2', qrqm, popular=True)
-            self.sheet.populateSheet(self.env("manual"), 'A2', manual, popular=True)
-            self.sheet.populateSheet(self.env("pny"), 'A2', pinoy, popular=True)
+        self.sheet.populateSheet(self.env("pop"), 'A2', popular, event=True)
+        self.sheet.populateSheet(self.env("cats"), 'A2', others, event=True)
+        self.sheet.populateSheet(self.env("qrqm"), 'A2', qrqm, popular=True)
+        self.sheet.populateSheet(self.env("manual"), 'A2', manual, popular=True)
+        self.sheet.populateSheet(self.env("pny"), 'A2', pinoy, popular=True)
         
         self.clearFolders()
