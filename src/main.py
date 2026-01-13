@@ -208,7 +208,7 @@ class Tableau(Utils, Tools):
                             temp_data = [[date] + idx[1:] for idx in temp]
                             self.sheet.populateSheet(nameFilter, temp_data)
                     else:
-                         match nameFilter:
+                        match nameFilter:
                             case _ if nameFilter in [self.env("sts"), self.env("stsg")]:
                                 sorted_data = self.sortIndexDesc(data=temp)
                                 self.sheet.populateSheet(nameFilter, sorted_data, event=True)
@@ -222,7 +222,7 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(self.env("t20"), total[:20], popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
-                                self.sheet.populateSheet(self.env("pup"), temp, event=True)
+                                self.sheet.populateSheet(self.env("pup"), temp, event=True, no_cell_check=True)
                                                             
                             case _ if nameFilter == self.env("pacs"):
                                 pac = [item for item in temp if "Total" in item]   

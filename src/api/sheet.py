@@ -44,35 +44,12 @@ class GoogleSheet:
             }
         ]
 
-    def populateSheet(self, sheetName: str, values: list, cell: str = "A2", **options):
+    def populateSheet(self, sheetName: str, values: list, cell: str = "A2", no_cell_check: bool = False, **options):
         """
         Populates sheet in single request, instead of 1 by 1
         """
         
-        if options.get("event"):
-            Id = helper.env('evtrckId')
-        elif options.get("emailVerification"):
-            Id = helper.env("evsheet")
-        elif options.get("popular"):
-            Id = helper.env("popularCompleteData")
-        elif options.get("dataIndex"):
-            Id = helper.env('dataIndicator')
-        else:
-            Id = helper.env('sheetId')
-        
-        check_cell_date = self.getCellValue(sheetName, Id) != values[0][0]
-        
-        if check_cell_date:
-            if options.get("singleData"):
-                    dataOption = "OVERWRITE" if options.get("popular") else "INSERT_ROWS"
-                    self.sheet.values().append(
-                    spreadsheetId=Id,
-                    range=f"{sheetName}!{cell}",
-                    valueInputOption='RAW',
-                    insertDataOption=dataOption,
-                    body={"values": values}
-                ).execute()
-            else:
+        def append_data_to_cell():
                 add_row = len(values)
                 requests = self.sheet_request_body(Id, sheetName)
                 requests[0]["insertDimension"]["range"]["endIndex"] = add_row + 1
@@ -90,15 +67,44 @@ class GoogleSheet:
                     valueInputOption='RAW',
                     body={"values": values}
                 ).execute()
+        
+        if options.get("event"):
+            Id = helper.env('evtrckId')
+        elif options.get("emailVerification"):
+            Id = helper.env("evsheet")
+        elif options.get("popular"):
+            Id = helper.env("popularCompleteData")
+        elif options.get("dataIndex"):
+            Id = helper.env('dataIndicator')
+        else:
+            Id = helper.env('sheetId')
+        
+        check_cell_date = self.getCellValue(sheetName, cell=cell, Id=Id) != values[0][0]
+        
+        if no_cell_check:
+            append_data_to_cell()
+        else:
+            if check_cell_date:
+                if options.get("singleData"):
+                        dataOption = "OVERWRITE" if options.get("popular") else "INSERT_ROWS"
+                        self.sheet.values().append(
+                        spreadsheetId=Id,
+                        range=f"{sheetName}!{cell}",
+                        valueInputOption='RAW',
+                        insertDataOption=dataOption,
+                        body={"values": values}
+                    ).execute()
+                else:
+                    append_data_to_cell()
  
-    def getCellValue(self, sheetName: str, Id: bool = False):
+    def getCellValue(self, sheetName: str, cell: str, Id: bool = False):
         """
         Use for checking cell of the given cell is eq or not to expected.
         """
         
         result = self.sheet.values().get(
             spreadsheetId=Id,
-            range=f'{sheetName}!A2'
+            range=f'{sheetName}!{cell}'
             ).execute()
 
         if 'values' in result:
