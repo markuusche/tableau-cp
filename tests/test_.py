@@ -55,6 +55,10 @@ class Test:
         self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
 
+    def test_depositWithdraw(self, driver):
+        self.data.gameReport(driver, depositWithdraw=True)
+        self.data.gameData()
+
     def test_dataIndex(self, driver):
         self.data.gameReport(driver, dataIndex=True)
         self.data.gameData()

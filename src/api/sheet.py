@@ -44,7 +44,7 @@ class GoogleSheet:
             }
         ]
 
-    def populateSheet(self, sheetName: str, values: list, cell: str = "A2", no_cell_check: bool = False, **options):
+    def populateSheet(self, sheetName: str, values: list, cell: str = "A2", **options):
         """
         Populates sheet in single request, instead of 1 by 1
         """
@@ -68,6 +68,15 @@ class GoogleSheet:
                     body={"values": values}
                 ).execute()
         
+        def append_values(dataOption: str):
+            self.sheet.values().append(
+                spreadsheetId=Id,
+                range=f"{sheetName}!{cell}",
+                valueInputOption='RAW',
+                insertDataOption=dataOption,
+                body={"values": values}
+            ).execute()
+        
         if options.get("event"):
             Id = helper.env('evtrckId')
         elif options.get("emailVerification"):
@@ -81,19 +90,16 @@ class GoogleSheet:
         
         check_cell_date = self.getCellValue(sheetName, cell=cell, Id=Id) != values[0][0]
         
-        if no_cell_check:
-            append_data_to_cell()
+        if options.get("no_cell_check"):
+            if options.get("no_cell_overwrite"):
+                append_values("OVERWRITE")
+            else:
+                append_data_to_cell()
         else:
             if check_cell_date:
                 if options.get("singleData"):
                         dataOption = "OVERWRITE" if options.get("popular") else "INSERT_ROWS"
-                        self.sheet.values().append(
-                        spreadsheetId=Id,
-                        range=f"{sheetName}!{cell}",
-                        valueInputOption='RAW',
-                        insertDataOption=dataOption,
-                        body={"values": values}
-                    ).execute()
+                        append_values(dataOption)
                 else:
                     append_data_to_cell()
  

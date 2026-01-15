@@ -105,8 +105,10 @@ class Tableau(Utils, Tools):
                 else:
                     getCSV(self.env(env))
         
-        if options.get("popUp"):
-            keys = self.env("advertisement", True)
+        if options.get("popUp") or options.get("depositWithdraw"):
+            key_list = "advertisement" if options.get("popUp") else "dp"
+            keys = self.env(key_list, True)
+
             for key in keys:
                 driver.get(self.env("popUp") + key)
                 self._iframe(driver)
@@ -222,7 +224,12 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(self.env("t20"), total[:20], popular=True)
                                 
                             case _ if nameFilter in [self.env("pup"), self.env("cpup")]:
-                                self.sheet.populateSheet(self.env("pup"), temp, event=True, no_cell_check=True)
+                                if "Deposit" in temp[0][2] or "Withdraw" in temp[0][2]:
+                                    for item in temp:
+                                        item[2] = item[2].replace(self.env("sts") + ":", "")
+                                    self.sheet.populateSheet(self.env("dpname"), temp, dataIndex=True, no_cell_check=True)
+                                else:
+                                    self.sheet.populateSheet(self.env("pup"), temp, event=True, no_cell_check=True)
                                                             
                             case _ if nameFilter == self.env("pacs"):
                                 pac = [item for item in temp if "Total" in item]   
@@ -239,7 +246,23 @@ class Tableau(Utils, Tools):
                                     raw.append(item[1])
                                 raw.insert(0, info["sunday"])
                                 data = [raw]
+                                
                                 self.sheet.populateSheet(nameFilter, data, dataIndex=True)
+
+                                for row in data:
+                                    if info["sunday"] in row:
+                                        data_result = int(row[2].replace(",","")) - int(row[3].replace(",",""))
+                                        withdraw_data = [[row[14], f"{data_result:,}"]]
+                                        dp_data = [[row[13], row[2]]]
+                                
+                                common_args = dict(
+                                    dataIndex=True,
+                                    no_cell_check=True,
+                                    no_cell_overwrite=True
+                                )
+
+                                for data, cell in [(withdraw_data, "F3"), (dp_data, "F2")]:
+                                    self.sheet.populateSheet(self.env("dpname"), data, cell=cell, **common_args)
 
                             case _:
                                 self.sheet.populateSheet(nameFilter, temp)

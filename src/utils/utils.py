@@ -135,7 +135,7 @@ class Utils(Helpers):
                     destination = movePath("pages")
                 elif options.get("promo"):
                     destination = movePath("promo")
-                elif options.get("popUp"):
+                elif options.get("popUp") or options.get("depositWithdraw"):
                     destination = movePath("popUp")
                 elif options.get("emailVerification"):
                     destination = movePath("email_verification")
