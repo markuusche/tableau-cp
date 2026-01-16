@@ -116,8 +116,9 @@ class Tableau(Utils, Tools):
 
             self.moveFiles(popUp=True)
             
+        # currently using CPE not pacman anymore ;)
         if options.get("pacMan"):
-            driver.get(self.env("pac"))
+            driver.get(self.env("pac") + info["sunday"])
             self._iframe(driver)
             self.download(driver)
             self.moveFiles(pacMan=True)
