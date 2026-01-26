@@ -16,10 +16,8 @@ class Utils(Helpers):
         return file
     
     @staticmethod
-    def sortIndexDesc(data: list, idx: int = 4, date: str | None = None) -> list[list]:
+    def sortIndexDesc(data: list, idx: int = 4) -> list[list]:
         for row in data:
-            if date:
-                row.insert(0, date)
             row[idx] = row[idx].replace(",", "")
         
         sorted_data = sorted(data, key=lambda index: int(index[idx]), reverse=True)

@@ -117,26 +117,24 @@ class Tableau(Utils, Tools):
                 self.download(driver)
 
             self.moveFiles(popUp=True)
-            
-        # currently using CPE not pacman anymore ;)
-        if options.get("pacMan"):
-            driver.get(self.env("pac") + self.previous_day)
-            self._iframe(driver)
-            self.download(driver)
-            self.moveFiles(pacMan=True)
         
-        if options.get("emailVerification"):
-            driver.get(self.env("em") + self.previous_day)
+        if options.get("pacMan") or options.get("emailVerification"):
+            link = "pac" if options.get("pacMan") else "em"
+            driver.get(self.env(link) + self.previous_day)
             self._iframe(driver)
             self.download(driver)
             
-            self.wait_element(driver, "table", "tab-2")
-            self.search_element(driver, "table", "tab-2", click=True)
-            self.wait_element(driver, "table", "data", timeout=180)
-            driver.execute_script("location.reload()")
-            self.download(driver)
-                
-            self.moveFiles(emailVerification=True)
+            # currently using CPE not pacman anymore ;)
+            if link == "pac":
+                self.moveFiles(pacMan=True)
+            else:
+                self.wait_element(driver, "table", "tab-2")
+                self.search_element(driver, "table", "tab-2", click=True)
+                self.wait_element(driver, "table", "data", timeout=180)
+                driver.execute_script("location.reload()")
+                self.download(driver)
+                    
+                self.moveFiles(emailVerification=True)
     
         self.moveFiles()
 
