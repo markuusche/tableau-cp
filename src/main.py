@@ -17,6 +17,8 @@ class Tableau(Utils, Tools):
     def __init__(self):
         self.sheet = GoogleSheet()
         self.downloads = os.path.expanduser("~/Downloads")
+        self.previous_day = self.getWeekInfo()["sunday"]
+        self.week_index = self.getWeekInfo()["weekday_index"]
     
     def navigate(self, driver, monthly: bool = False, iframe: bool = False) -> None:
         """
@@ -49,8 +51,8 @@ class Tableau(Utils, Tools):
     
         self.wait_element(driver, 'table', 'date-1', timeout=120)
         
-        if info["weekday_index"] == 0:
-            inputDate(info["monday"], info["sunday"])
+        if self.week_index == 0:
+            inputDate(info["monday"], self.previous_day)
 
         if monthly:
             inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
@@ -87,7 +89,7 @@ class Tableau(Utils, Tools):
                 # another data to separate
                 getCSV(self.env("event") + self.env("games"))
 
-            if info["weekday_index"] == 0:
+            if self.week_index == 0:
                 categories = self.env('tracking', True)
                 for i, item in enumerate(categories):
                     driver.get(self.env('event') + f"页面={item}")
@@ -101,16 +103,16 @@ class Tableau(Utils, Tools):
         for env in os_envs:
             if options.get(env):
                 if env == 'dataIndex':
-                    getCSV(self.env(env) + info['sunday'], dataIndex=True, selector='index table')
+                    getCSV(self.env(env) + self.previous_day, dataIndex=True, selector='index table')
                 else:
-                    getCSV(self.env(env))
+                    getCSV(self.env(env) + self.previous_day)
         
         if options.get("popUp") or options.get("depositWithdraw"):
             key_list = "advertisement" if options.get("popUp") else "dp"
             keys = self.env(key_list, True)
 
             for key in keys:
-                driver.get(self.env("popUp") + key)
+                driver.get(self.env("popUp") + key + f"&Date 关键页={self.previous_day}")
                 self._iframe(driver)
                 self.download(driver)
 
@@ -118,13 +120,13 @@ class Tableau(Utils, Tools):
             
         # currently using CPE not pacman anymore ;)
         if options.get("pacMan"):
-            driver.get(self.env("pac") + info["sunday"])
+            driver.get(self.env("pac") + self.previous_day)
             self._iframe(driver)
             self.download(driver)
             self.moveFiles(pacMan=True)
         
         if options.get("emailVerification"):
-            driver.get(self.env("em") + info["sunday"])
+            driver.get(self.env("em") + self.previous_day)
             self._iframe(driver)
             self.download(driver)
             
@@ -200,8 +202,8 @@ class Tableau(Utils, Tools):
                         temp = [data]
 
                 if not month:
-                    date = f"{info["monday"]} - {info["sunday"]}"
-                    if info["weekday_index"] == 0 and stats in {"week_stats", "game_stats"}:
+                    date = f"{info["monday"]} - {self.previous_day}"
+                    if self.week_index == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter or "Games (" in nameFilter:
                             data = self.sumEventGeneric(mode, date, nameFilter, key_cols=[2, 3], val_cols=[4, 5])
                             env = self.env("st_weekly") if "Home (" in nameFilter else self.env("sg_weekly")
@@ -245,13 +247,13 @@ class Tableau(Utils, Tools):
                                 raw = []
                                 for item in temp:
                                     raw.append(item[1])
-                                raw.insert(0, info["sunday"])
+                                raw.insert(0, self.previous_day)
                                 data = [raw]
                                 
                                 self.sheet.populateSheet(nameFilter, data, dataIndex=True)
 
                                 for row in data:
-                                    if info["sunday"] in row:
+                                    if self.previous_day in row:
                                         data_result = int(row[2].replace(",","")) - int(row[3].replace(",",""))
                                         withdraw_data = [[row[14], f"{data_result:,}"]]
                                         dp_data = [[row[13], row[2]]]
@@ -289,8 +291,7 @@ class Tableau(Utils, Tools):
         """
         Gets the Home & Games data separated from main data fetching
         """
-        info = self.getWeekInfo()
-        driver.get(self.env("classification") + info["sunday"])
+        driver.get(self.env("classification") + self.previous_day)
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
