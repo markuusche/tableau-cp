@@ -17,6 +17,7 @@ class Tableau(Utils, Tools):
     def __init__(self):
         self.sheet = GoogleSheet()
         self.downloads = os.path.expanduser("~/Downloads")
+        self.info = self.getWeekInfo()
         self.previous_day = self.getWeekInfo()["sunday"]
         self.week_index = self.getWeekInfo()["weekday_index"]
     
@@ -25,7 +26,6 @@ class Tableau(Utils, Tools):
         Page navigation — helps with downloading ? :O
         """
         # send date info to date text field
-        info = self.getWeekInfo()
         def inputDate(dateOne, dateTwo):
             dates = {
                     'date-1': dateOne,
@@ -52,10 +52,10 @@ class Tableau(Utils, Tools):
         self.wait_element(driver, 'table', 'date-1', timeout=120)
         
         if self.week_index == 0:
-            inputDate(info["monday"], self.previous_day)
+            inputDate(self.info["monday"], self.previous_day)
 
         if monthly:
-            inputDate(info["last_month_dates"][0], info["last_month_dates"][-1])
+            inputDate(self.info["last_month_dates"][0], self.info["last_month_dates"][-1])
 
         self.moveFiles()
 
@@ -70,8 +70,6 @@ class Tableau(Utils, Tools):
             self._iframe(driver, selector=selector)
             self.download(driver, dataIndex=dataIndex)
             self.moveFiles(gameEvent=True)
-
-        info = self.getWeekInfo()
 
         # all game data
         if all(not options.get(flag) for flag in self.env("boolKeys", True)):
@@ -93,7 +91,7 @@ class Tableau(Utils, Tools):
                 categories = self.env('tracking', True)
                 for i, item in enumerate(categories):
                     driver.get(self.env('event') + f"页面={item}")
-                    self.singlePage(driver, info["full_week"])
+                    self.singlePage(driver, self.info["full_week"])
                     if i != 1:
                         self.moveFiles()
                     else:
@@ -149,7 +147,6 @@ class Tableau(Utils, Tools):
         # data fetch/filtering
         def dataList(mode, stats: str, theFiles, em: bool = False):
             target = Path.home() / f"Downloads/{mode}"
-            info = self.getWeekInfo()
 
             for name in theFiles:
 
@@ -200,7 +197,7 @@ class Tableau(Utils, Tools):
                         temp = [data]
 
                 if not month:
-                    date = f"{info["monday"]} - {self.previous_day}"
+                    date = f"{self.info["monday"]} - {self.previous_day}"
                     if self.week_index == 0 and stats in {"week_stats", "game_stats"}:
                         if "Home (" in nameFilter or "Games (" in nameFilter:
                             data = self.sumEventGeneric(mode, date, nameFilter, key_cols=[2, 3], val_cols=[4, 5])
@@ -269,7 +266,7 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(nameFilter, temp)
                 else:
                     sheet_names = nameFilter + " (Monthly)"
-                    dates = info["last_month_dates"]
+                    dates = self.info["last_month_dates"]
                     temp_data = [[f"{min(dates)} - {max(dates)}"] + idx[1:] for idx in temp]
                     self.sheet.populateSheet(sheet_names, temp_data)
 

@@ -71,12 +71,6 @@ class Utils(Helpers):
             "last_month_dates": last_month_dates
         }
 
-    # rename file(s)?
-    def renameFiles(self, file) -> str:
-        file_names = self.env(file)
-        names = ast.literal_eval(file_names) if file_names else {}
-        return names
-    
     def moveFiles(self, **options):
         
         downloads = os.path.expanduser("~/Downloads")
@@ -90,8 +84,9 @@ class Utils(Helpers):
         for value in path.values():
             os.makedirs(value, exist_ok=True)
 
-        files = self.renameFiles('file_names')
-        file_renames = files
+        file_names = self.env("file_names")
+        names = ast.literal_eval(file_names) if file_names else {}
+        file_renames = names
         
         if not options.get("game"):
             for original_name in file_renames.keys():
