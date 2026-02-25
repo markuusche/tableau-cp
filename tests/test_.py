@@ -48,7 +48,7 @@ class Test:
     def test_merged_popularData(self):
         mergedData.mergedData(popular=True)
         mergedData.mergedData(manual=True)
-        mergedData.mergedData(pacMan=True)
+        mergedData.mergedData(newGame=True)
         mergedData.mergedData()
 
     def test_recentPlay(self, driver):

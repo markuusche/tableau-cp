@@ -292,10 +292,12 @@ class Tableau(Utils, Tools):
         self.moveFiles(page=True)
         popular, others, qrqm, manual = self.pageData()
         pinoy = [row for row in others if self.env("pnyslts") in row]
+        new_games = [row for row in others if self.env("newgames") in row]
         self.sheet.populateSheet(self.env("pop"), popular, event=True)
         self.sheet.populateSheet(self.env("cats"), others, event=True)
         self.sheet.populateSheet(self.env("qrqm"), qrqm, popular=True)
         self.sheet.populateSheet(self.env("manual"), manual, popular=True)
         self.sheet.populateSheet(self.env("pny"), pinoy, popular=True)
+        self.sheet.populateSheet(self.env("ngms"), new_games, popular=True)
         
         self.clearFolders()
