@@ -36,6 +36,10 @@ class Test:
     def test_popUp(self, driver):
         self.data.gameReport(driver, popUp=True)
         self.data.gameData()
+    
+    def test_footer(self, driver):
+        self.data.gameReport(driver, footer=True)
+        self.data.gameData()
 
     def test_emailVerification(self, driver):
         self.data.gameReport(driver, emailVerification=True)
@@ -44,12 +48,6 @@ class Test:
     def test_pacman_Exclusive(self, driver):
         self.data.gameReport(driver, pacMan=True)
         self.data.gameData()
-
-    def test_merged_popularData(self):
-        mergedData.mergedData(popular=True)
-        mergedData.mergedData(manual=True)
-        mergedData.mergedData(newGame=True)
-        mergedData.mergedData()
 
     def test_recentPlay(self, driver):
         self.data.gameReport(driver, recentPlay=True)
@@ -62,6 +60,12 @@ class Test:
     def test_dataIndex(self, driver):
         self.data.gameReport(driver, dataIndex=True)
         self.data.gameData()
+    
+    def test_merged_popularData(self):
+        mergedData.mergedData(popular=True)
+        mergedData.mergedData(manual=True)
+        mergedData.mergedData(newGame=True)
+        mergedData.mergedData()
 
     def test_monthly(self, driver):
         if len(self.info.getWeekInfo()["last_month_dates"]) != 0:

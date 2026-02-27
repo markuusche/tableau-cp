@@ -97,7 +97,7 @@ class Tableau(Utils, Tools):
                     else:
                         self.moveFiles(game=True)
                         
-        os_envs = ['miniBanner', 'promo', 'otherPromo', 'recentPlay', 'dataIndex']
+        os_envs = ['miniBanner', 'promo', 'otherPromo', 'recentPlay', 'dataIndex', 'footer']
         for env in os_envs:
             if options.get(env):
                 if env == 'dataIndex':
@@ -228,7 +228,11 @@ class Tableau(Utils, Tools):
                                     self.sheet.populateSheet(self.env("dpname"), temp, dataIndex=True, no_cell_check=True)
                                 else:
                                     self.sheet.populateSheet(self.env("pup"), temp, event=True, no_cell_check=True)
-                                                            
+                            
+                            case _ if nameFilter == self.env("ft"):
+                                sortedValues = sorted(temp, key=lambda x: (x[1], -int(x[3].replace(",", ""))))
+                                self.sheet.populateSheet(nameFilter, sortedValues, event=True)
+
                             case _ if nameFilter == self.env("pacs"):
                                 pac = [item for item in temp if "Total" in item]   
                                 self.sheet.populateSheet(nameFilter, pac, event=True)

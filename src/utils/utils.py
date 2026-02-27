@@ -117,7 +117,7 @@ class Utils(Helpers):
         # move stats file separately to a folder
         for filename in os.listdir(downloads):
             filepath = os.path.join(downloads, filename)
-            keys =  ["st", "stp", "pp", "mb", "hp", "tab", "tab1", "tab2", "index"]
+            keys =  ["st", "stp", "pp", "mb", "hp", "tab", "tab1", "tab2", "index", "fte"]
             if os.path.isfile(filepath) and filename.startswith(tuple(self.env(key) for key in keys)):
                 movePath = lambda folder: os.path.join(path[folder], filename)
                 if options.get("gameEvent"):
