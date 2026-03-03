@@ -286,22 +286,26 @@ class Tableau(Utils, Tools):
 
         self.clearFolders()
     
-    def homePage(self, driver) -> None:
+    def homePage(self, driver, cashback: bool = False) -> None:
         """
         Gets the Home & Games data separated from main data fetching
         """
-        driver.get(self.env("classification") + self.previous_day)
+        source = "classification" if not cashback else "CB"
+        driver.get(self.env(source) + self.previous_day)
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
-        popular, others, qrqm, manual = self.pageData()
+        popular, others, qrqm, manual, cashback = self.pageData()
         pinoy = [row for row in others if self.env("pnyslts") in row]
         new_games = [row for row in others if self.env("newgames") in row]
-        self.sheet.populateSheet(self.env("pop"), popular, event=True)
-        self.sheet.populateSheet(self.env("cats"), others, event=True)
-        self.sheet.populateSheet(self.env("qrqm"), qrqm, popular=True)
-        self.sheet.populateSheet(self.env("manual"), manual, popular=True)
-        self.sheet.populateSheet(self.env("pny"), pinoy, popular=True)
-        self.sheet.populateSheet(self.env("ngms"), new_games, popular=True)
+        if not cashback:
+            self.sheet.populateSheet(self.env("pop"), popular, event=True)
+            self.sheet.populateSheet(self.env("cats"), others, event=True)
+            self.sheet.populateSheet(self.env("qrqm"), qrqm, popular=True)
+            self.sheet.populateSheet(self.env("manual"), manual, popular=True)
+            self.sheet.populateSheet(self.env("pny"), pinoy, popular=True)
+            self.sheet.populateSheet(self.env("ngms"), new_games, popular=True)
+        else:
+            self.sheet.populateSheet(self.env("cbck"), cashback, popular=True)
         
         self.clearFolders()

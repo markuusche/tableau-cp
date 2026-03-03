@@ -23,6 +23,7 @@ class Test:
 
     def test_popular(self, driver):
         self.data.homePage(driver)
+        self.data.homePage(driver, cashback=True)
 
     def test_promo(self, driver):
         self.data.gameReport(driver, promo=True)
@@ -65,6 +66,7 @@ class Test:
         mergedData.mergedData(popular=True)
         mergedData.mergedData(manual=True)
         mergedData.mergedData(newGame=True)
+        mergedData.mergedData(cashback=True)
         mergedData.mergedData()
 
     def test_monthly(self, driver):

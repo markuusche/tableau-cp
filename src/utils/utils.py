@@ -267,6 +267,7 @@ class Utils(Helpers):
 
         popular = []
         others = []
+        cashback = []
         
         for p in sorted_files:
             k = [[], [], [], [], [], []]
@@ -282,7 +283,7 @@ class Utils(Helpers):
                 else:
                     k[2].append(row)
 
-            k[2].extend(k[1])
+            cashback.append(k[2])
             
             g = [[], []]
             
@@ -327,6 +328,10 @@ class Utils(Helpers):
         manual_data = sortDecs(metric_manual)
         qrqm_data = sortDecs(metric_qrqm)
         
+        # cashback
+        total_cashback = [row for row in cashback[0] if "Total" in row]
+        top_cashback = sorted(total_cashback, key=lambda x: (x[1], -int(x[5].replace(",", ""))))[:20]
+
         #others sorting
         grouped = defaultdict(list)
         for row in others:
@@ -346,7 +351,7 @@ class Utils(Helpers):
         for row in sorted_result:
             others.append(row)
         
-        return sorted_data, others, qrqm_data, manual_data
+        return sorted_data, others, qrqm_data, manual_data, top_cashback
 
     # delete daily/weekly folder
     def clearFolders(self) -> None:
