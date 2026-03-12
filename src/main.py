@@ -234,7 +234,8 @@ class Tableau(Utils, Tools):
                                 self.sheet.populateSheet(nameFilter, sortedValues, event=True)
                                 
                             case _ if nameFilter == self.env("appds"):
-                                self.sheet.populateSheet(nameFilter, temp, event=True)
+                                names = [i[:1] + [i[1].replace(self.env("dsfilter"), "").strip()] + i[2:] for i in temp]
+                                self.sheet.populateSheet(nameFilter, names, event=True)
 
                             case _ if nameFilter == self.env("pacs"):
                                 pac = [item for item in temp if "Total" in item]   
