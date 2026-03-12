@@ -79,7 +79,7 @@ class Tableau(Utils, Tools):
                 self.navigate(driver, monthly=options.get("monthly"))
 
         if options.get("page"):
-            driver.get(self.env('statistics'))
+            driver.get(self.env('statistics') + self.previous_day)
             self._iframe(driver)
 
             if not options.get("monthly"):
@@ -295,7 +295,7 @@ class Tableau(Utils, Tools):
         self._iframe(driver)
         self.download(driver)
         self.moveFiles(page=True)
-        popular, others, qrqm, manual, cashback = self.pageData()
+        popular, others, qrqm, manual, get_cashback = self.pageData()
         pinoy = [row for row in others if self.env("pnyslts") in row]
         new_games = [row for row in others if self.env("newgames") in row]
         if not cashback:
@@ -306,6 +306,6 @@ class Tableau(Utils, Tools):
             self.sheet.populateSheet(self.env("pny"), pinoy, popular=True)
             self.sheet.populateSheet(self.env("ngms"), new_games, popular=True)
         else:
-            self.sheet.populateSheet(self.env("cbck"), cashback, popular=True)
+            self.sheet.populateSheet(self.env("cbck"), get_cashback, popular=True)
         
         self.clearFolders()
