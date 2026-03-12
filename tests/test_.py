@@ -62,6 +62,10 @@ class Test:
         self.data.gameReport(driver, dataIndex=True)
         self.data.gameData()
     
+    def test_downloadStore(self, driver):
+        self.data.gameReport(driver, DS=True)
+        self.data.gameData()
+    
     def test_merged_popularData(self):
         mergedData.mergedData(popular=True)
         mergedData.mergedData(manual=True)
