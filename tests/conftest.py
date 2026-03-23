@@ -17,3 +17,14 @@ def driver():
         yield driver
     except Exception as e:
         pytest.fail(f"Could not connect to browser on port {port}. check launcher.py? Exception: {e}")
+
+@pytest.fixture(autouse=True)
+def handle_game_data(request):
+    yield
+    instance = getattr(request.node, "instance", None)
+    attrr = getattr(instance, "data", None)
+    if attrr:
+        if request.node.name == "test_monthly":
+            attrr.gameData(month=True)
+        elif "merged" not in request.node.name:
+            attrr.gameData()
