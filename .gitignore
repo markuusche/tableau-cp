@@ -9,3 +9,6 @@ asd.py
 .DS_Store
 mergedData.py
 md_backup.py
+chrome_profile
+launcher.py
+task.py

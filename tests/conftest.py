@@ -1,38 +1,19 @@
+import time
 import pytest
 from selenium import webdriver
 from src.helpers.helper import Helpers
-from src.utils.tools import Tools
 
 @pytest.fixture(scope="session")
-def driver():
-    #setup
-    user = Tools()
+def driver(): 
+    port = "9333"
     option = webdriver.ChromeOptions()
-    option.add_argument("--headless")
-    option.add_argument("--no-sandbox")
-    option.add_argument("--mute-audio")
-    option.add_argument("--no-sandbox")
-    option.add_argument("--disable-dev-shm-usage")
-    option.add_argument("--hide-scrollbars")
-    option.add_argument("--disable-infobars")
-    option.add_argument("--disable-extensions")
-    option.add_argument("--disable-popup-blocking")
-    option.add_argument("--hide-scrollbars")
-    option.add_experimental_option("excludeSwitches",["enable-automation"])
-    option.add_experimental_option('useAutomationExtension', False)
-    option.add_experimental_option("prefs", {
-            "credentials_enable_service": False,      
-            "profile.password_manager_enabled": False,
-            "profile.password_manager_leak_detection": False,
-            "profile.default_content_setting_values.notifications": 2
-        })
-    driver = webdriver.Chrome(options=option)
-    driver.maximize_window()
-    driver.get(Helpers.env('main'))
-    user.userLogin(driver)
-
-    yield driver
-        
-    #teardown
-    driver.close()  
-    driver.quit()
+    option.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+    try:
+        driver = webdriver.Chrome(options=option)
+        driver.execute_cdp_cmd("Network.clearBrowserCache", {})
+        driver.maximize_window()
+        driver.get(Helpers.env('main'))
+        time.sleep(20) # time needed to manually scan QR on the web
+        yield driver
+    except Exception as e:
+        pytest.fail(f"Could not connect to browser on port {port}. check launcher.py? Exception: {e}")

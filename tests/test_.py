@@ -46,10 +46,6 @@ class Test:
         self.data.gameReport(driver, emailVerification=True)
         self.data.gameData()
 
-    def test_pacman_Exclusive(self, driver):
-        self.data.gameReport(driver, pacMan=True)
-        self.data.gameData()
-
     def test_recentPlay(self, driver):
         self.data.gameReport(driver, recentPlay=True)
         self.data.gameData()
